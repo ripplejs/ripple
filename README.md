@@ -2,6 +2,23 @@
 
 A DOM binding component based on component/reactive.
 
+## Features
+
+Possible features we could include
+
+* Iteration
+* Bind more than one object (think express routes)
+* Filters between object and DOM
+* Two-way binding ?
+* "Global" bindings - create an Binder and share it
+* Nice templating. Probably just attributes to keep it simple
+* To be a binding "foundation" - it doesn't come with any bindings at all?
+* Take all the good bits from Angular, Ractive, React and Reactive.
+* Use streams as a base for data flow ?
+* Have a `scope` for bindings like Angular
+
+## API
+
 ```
 var Ripple = require('ripple');
 ```
