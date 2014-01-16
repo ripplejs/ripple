@@ -1,0 +1,19 @@
+{
+  "name": "ripple",
+  "paths": ["../"],
+  "local": [
+    "ripplejs-compiler",
+    "ripplejs-adapter"
+  ],
+  "scripts": ["index.js"],
+  "dependencies": {
+    "timoxley/to-array": "*",
+    "schematic/scope": "*",
+    "component/domify": "*",
+    "component/emitter": "*",
+    "component/clone": "*"
+  },
+  "development": {
+    "component/assert": "*"
+  }
+}

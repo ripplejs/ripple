@@ -1,20 +1,16 @@
 # Ripple
 
-A DOM binding component based on component/reactive.
+A DOM binding component based on component/reactive and tower/template.
 
 ## Features
 
 Possible features we could include
 
 * Iteration
-* Bind more than one object (think express routes)
-* Filters between object and DOM
-* Two-way binding ?
-* "Global" bindings - create an Binder and share it
-* Nice templating. Probably just attributes to keep it simple
-* To be a binding "foundation" - it doesn't come with any bindings at all?
-* Take all the good bits from Angular, Ractive, React and Reactive.
-* Use streams as a base for data flow ?
+* Bind more than one object
+* Filters between object and DOM via streams
+* Two-way binding
+* Use streams as a base for data flow
 * Have a `scope` for bindings like Angular
 
 ## API
@@ -23,22 +19,21 @@ Possible features we could include
 var Ripple = require('ripple');
 ```
 
-Ripple is a constructor that takes an element or a template string:
+Ripple is a constructor that takes an element or a template string or an element:
 
 ```
-var view = new Ripple(el);
+var ripple = new Ripple();
+var template = ripple.compile("<div on-click="save">{{name}}</div>");
+var el = template({
+  name: 'Tom',
+  save: function(event){
+
+  }
+});
+
 ```
 
-Bind to observable objects. It will trace down the stack when evaluating the values.
-Wrappers are created around each object to unbind everything later
-
-```
-view
-  .bind(model)
-  .bind(view);
-```
-
-Functionality is added via the `use` method. They are stacked like middleware in Express.
+Functionality is added via the `use` method.
 
 ```
 view
@@ -47,8 +42,6 @@ view
   .use(textBindings)
   .use(events)
   .use(iterator);
-  
-stream.pipe(view(el));
 ```
 
 Create wrappers around objects that work as adapters.
@@ -70,71 +63,10 @@ view.bind(model, {
 });
 ```
 
-Create custom attribute bindings:
+# notes
 
-```
-view.use(function(next){
-  this.attr('hidden', function(el){});
-  this.el;
-  this.scope;
-  next();
-});
-```
+https://github.com/schematic/scope
 
-Unbind from individual objects:
-
-```
-view.unbind(model);
-view.unpipe(stream);
-```
-
-Or unbind from all objects:
-
-```
-view.unpipe();
-```
-
-## Text Bindings
-
-```
-	<div data-text="foo.bar.baz"></div>
-```
-
-```
-view.use(function(next){
-	this.attr('data-text', function(el, value){
-		
-	});
-	next();
-});
-```
-
-## Controller
-
-```
-	<div controller="page"></div>
-```
-
-```
-view.use(function(next){
-	this.attr('controller', function(el, attr){
-		var child = this.child(this.value(attr));
-		el.appendChild(child);
-	});
-	next();
-});
-```
-
-## Iteration
-
-```
-view.use(function(next){
-	this.attr('each', function(el, attr){
-		el.parentNode.removeChild(el);
-		this.each(attr, function(child){
-			this.child(child, el.outerHTML, el.parentNode);
-		});		
-	});
-	next();
-});
-```
+It could render the template in a fragment, do a diff on the actual
+element and render the changes
+https://github.com/jwerle/dom-observer
