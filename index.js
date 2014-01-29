@@ -2,7 +2,6 @@ var domify = require('domify');
 var Scope = require('scope');
 var Compiler = require('compiler');
 var emitter = require('emitter');
-var toArray = require('to-array');
 var clone = require('clone');
 var Adapter = require('adapter');
 
@@ -12,6 +11,7 @@ var Adapter = require('adapter');
 function Ripple() {
   if(!(this instanceof Ripple)) return new Ripple();
   this.directives = {};
+  this.bindings = {};
 }
 
 /**
@@ -39,37 +39,42 @@ Ripple.prototype.use = function(fn) {
  *
  * @return {Function}
  */
-Ripple.prototype.compile = function(template) {
+Ripple.prototype.compile = function(template, model) {
   var self = this;
   if(typeof template === 'string') template = domify(template);
-  return function() {
-    var scopes = toArray(arguments).map(self.adapter);
-    var scope = new Scope(scopes);
-    var compiler = new Compiler(clone(self.directives));
-    self.emit('compile', compiler, scope);
-    return compiler.compile(template, scope);
-  };
+  var compiler = new Compiler(clone(self.directives), clone(self.bindings));
+  self.emit('compile', compiler, model);
+  return compiler.compile(template, model);
 };
 
 /**
- * Create a new directive
- *
- * Function is in the form fn(scope, el, value)
- *   - The current scope
- *   - The element
- *   - The value of the directive attribute
- *
- * Options available:
- *   - processChildren (boolean) Keep processing children
- *   - terminal (boolean) Stop processing entirely
+ * Add a new attribute binding
  *
  * @param {String} name
  * @param {Function} fn
- * @param {Object} [options]
+ * @param {Object} options
  *
  * @return {Ripple}
  */
-Ripple.prototype.directive = function(name, fn, options) {
+Ripple.prototype.binding = function(name, fn, options) {
+  this.binding[name] = {
+    name: name,
+    process: fn,
+    options: options || {}
+  };
+  return this;
+};
+
+/**
+ * Add a new custom view
+ *
+ * @param {Function} fn
+ * @param {Object} options
+ *
+ * @return {Ripple}
+ */
+Ripple.prototype.view = function(fn, options) {
+  var name = fn.name.toLowerCase();
   this.directives[name] = {
     name: name,
     process: fn,
