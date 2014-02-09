@@ -4,7 +4,7 @@
   "dependencies": {
     "component/emitter": "*",
     "ripplejs/compiler": "*",
-    "ripplejs/view": "*"
+    "ripplejs/view": "0.0.1"
   },
   "development": {
     "component/assert": "*"
