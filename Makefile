@@ -8,4 +8,7 @@ components: component.json
 clean:
 	rm -fr build components template.js
 
+test: build
+	mocha-phantomjs test/index.html
+
 .PHONY: clean

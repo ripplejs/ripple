@@ -2,11 +2,8 @@
   "name": "ripple",
   "scripts": ["index.js"],
   "dependencies": {
-    "schematic/scope": "*",
-    "component/domify": "*",
     "component/emitter": "*",
-    "component/clone": "*",
-    "ripplejs/compiler": "*"
+    "ripplejs/compiler": "0.0.1"
   },
   "development": {
     "component/assert": "*"
