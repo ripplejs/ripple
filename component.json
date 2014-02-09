@@ -3,7 +3,7 @@
   "scripts": ["index.js"],
   "dependencies": {
     "component/emitter": "*",
-    "ripplejs/compiler": "0.0.1"
+    "ripplejs/compiler": "*"
   },
   "development": {
     "component/assert": "*"
