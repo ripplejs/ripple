@@ -38,6 +38,7 @@ Ripple.prototype.compile = function(template) {
   var self = this;
   return view(template, function(obj){
     self.compiler.compile(obj);
+    self.emit('construct', obj);
   });
 };
 
