@@ -1,0 +1,17 @@
+language: node_js
+
+node_js:
+  - 0.10
+
+install:
+  - npm install mocha-phantomjs component
+
+before_script:
+  - make build
+
+script:
+  - node node_modules/.bin/mocha-phantomjs /test/index.html
+
+notifications:
+  email:
+    - antshort+travis@gmail.com
