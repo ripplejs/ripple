@@ -1,10 +1,10 @@
 {
   "name": "ripple",
+  "version": "0.0.1",
   "scripts": ["index.js"],
   "dependencies": {
-    "component/emitter": "*",
-    "ripplejs/compiler": "*",
-    "ripplejs/view": "0.0.1"
+    "ripplejs/compiler": "0.0.1",
+    "ripplejs/view": "0.0.3"
   },
   "development": {
     "component/assert": "*"

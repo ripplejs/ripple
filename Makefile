@@ -6,9 +6,9 @@ components: component.json
 	@component install --dev
 
 clean:
-	rm -fr build components template.js
+	rm -fr build components
 
 test: build
 	mocha-phantomjs test/index.html
 
-.PHONY: clean
+.PHONY: clean test
