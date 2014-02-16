@@ -118,7 +118,6 @@ describe('Ripple', function(){
       view.set('bar', 2);
 
       dom.defer(function(){
-        console.log(view.el);
         assert(view.el.id === 'foo-2');
         assert(view.el.getAttribute('class') === 'success');
         assert(view.el.hasAttribute('hidden') === false);
