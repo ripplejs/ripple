@@ -29,6 +29,7 @@ no "utils" included on the global scope.
 
 * Automatic DOM binding
 * Composable views
+* Batched DOM rendering
 * Interpolation with filters
 * Extendable via plugins
 * No globals
