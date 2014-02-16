@@ -112,23 +112,45 @@ describe('Ripple', function(){
         type: 'danger',
         hidden: true
       });
-
       view.set('hidden', false);
       view.set('type', 'success');
       view.set('bar', 2);
-
       dom.defer(function(){
         assert(view.el.id === 'foo-2');
         assert(view.el.getAttribute('class') === 'success');
         assert(view.el.hasAttribute('hidden') === false);
         done();
       });
-
     });
-
 
   });
 
 
+  describe('creating child views', function () {
+
+    beforeEach(function () {
+      View = ripple('<div></div>');
+      View.directive('data-text', function(view, node, attr, value){
+        node.innerHTML = view.get(value);
+      });
+      View.filter('caps', function(val){
+        return val.toUpperCase();
+      });
+    })
+
+    it('should create a child view', function (done) {
+      var Child = View.create('<div id="{{ id | caps }}" data-text="content"></div>');
+      var child = new Child({
+        id: 'foo',
+        content: 'test'
+      });
+      dom.defer(function(){
+        assert( child.el.id === "FOO" );
+        assert( child.el.innerHTML === "test" );
+        done();
+      });
+    });
+
+  });
 
 })

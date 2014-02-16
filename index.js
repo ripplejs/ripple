@@ -124,5 +124,19 @@ module.exports = function(template) {
     compiler.compile(this);
   };
 
+  /**
+   * Spawn a child view that has the same compiler
+   * and interpolator and has thi
+   *
+   * @param {String} template
+   *
+   * @return {View}
+   */
+  View.create = function(template) {
+    var Child = view(template);
+    Child.prototype = Object.create(View.prototype);
+    return Child;
+  };
+
   return View;
 };
