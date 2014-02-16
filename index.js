@@ -1,6 +1,6 @@
 var Compiler = require('compiler');
 var view = require('view');
-var interpolate = require('interpolate');
+var Interpolator = require('interpolate');
 
 /**
  * Returns a function that creates a view
@@ -10,8 +10,8 @@ var interpolate = require('interpolate');
  */
 module.exports = function(template) {
   var compiler = new Compiler();
+  var interpolate = new Interpolator();
   var View = view(template);
-  var filters = {};
 
   /**
    * Add a component
@@ -48,7 +48,19 @@ module.exports = function(template) {
    * @return {View}
    */
   View.filter = function(name, fn) {
-    filters[name] = fn;
+    interpolate.filter(name, fn);
+    return this;
+  };
+
+  /**
+   * Set the template delimiters
+   *
+   * @param {Regex} match
+   *
+   * @return {View}
+   */
+  View.delimiters = function(match) {
+    interpolate.delimiters(match);
     return this;
   };
 
@@ -66,7 +78,7 @@ module.exports = function(template) {
     var attrs = interpolate.props(str);
     if(attrs.length === 0) return;
     function render() {
-      return interpolate(str, self.get(attrs), filters);
+      return interpolate.value(str, self.get(attrs));
     }
     if(!callback) return render();
     callback(render());

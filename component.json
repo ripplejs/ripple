@@ -5,9 +5,10 @@
   "dependencies": {
     "ripplejs/compiler": "0.0.1",
     "ripplejs/view": "0.0.4",
-    "ripplejs/interpolate": "0.0.5"
+    "ripplejs/interpolate": "0.1.0"
   },
   "development": {
-    "component/assert": "*"
+    "component/assert": "*",
+    "wilsonpage/fastdom": "v0.8.4"
   }
 }

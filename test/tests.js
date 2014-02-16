@@ -1,5 +1,6 @@
 var ripple = require('ripple');
 var assert = require('assert');
+var dom = require('fastdom');
 
 describe('Ripple', function(){
   var View;
@@ -83,26 +84,52 @@ describe('Ripple', function(){
 
   });
 
-  describe('binding events', function () {
+  describe('Attributes', function () {
 
-    it('should bind and fire an event', function(done){
-      var view = new View();
-      view.on('bind', function(){
-        done();
-      });
-      view.bind();
+    beforeEach(function () {
+      View = ripple('<div id="foo-{{bar}}" class="{{type}}" hidden="{{hidden}}">{{content}}</div>');
     })
 
-    it('should unbind and fire an event', function(done){
-      var view = new View();
-      view.on('unbind', function(){
+    it('interpolate attributes', function (done) {
+      var view = new View({
+        bar: 1,
+        type: 'danger',
+        hidden: true
+      });
+
+      dom.defer(function(){
+        assert(view.el.id === 'foo-1');
+        assert(view.el.getAttribute('class') === 'danger');
+        assert(view.el.hasAttribute('hidden'));
         done();
       });
-      view
-        .bind()
-        .unbind();
-    })
+
+    });
+
+    it('updated interpolated attributes', function (done) {
+      var view = new View({
+        bar: 1,
+        type: 'danger',
+        hidden: true
+      });
+
+      view.set('hidden', false);
+      view.set('type', 'success');
+      view.set('bar', 2);
+
+      dom.defer(function(){
+        console.log(view.el);
+        assert(view.el.id === 'foo-2');
+        assert(view.el.getAttribute('class') === 'success');
+        assert(view.el.hasAttribute('hidden') === false);
+        done();
+      });
+
+    });
+
 
   });
+
+
 
 })
