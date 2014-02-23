@@ -1,6 +1,4 @@
-# ripple
-
-[![Build Status](https://travis-ci.org/ripplejs/ripple.png?branch=master)](https://travis-ci.org/ripplejs/ripple)
+# ripple [![Build Status](https://travis-ci.org/ripplejs/ripple.png?branch=master)](https://travis-ci.org/ripplejs/ripple) ![experimental](http://img.shields.io/badge/stability-experimental-orange.svg) #
 
 A tiny reactive templating library built for Component that is
 completely pluggable. It is a foundation for building views that have
@@ -114,3 +112,15 @@ app.mount(document.body);
 ## Working with models
 
 ## Plugins
+
+## Notes
+
+- Event stream
+
+```
+this.event('save')
+  .pipe(preventDefault)
+  .pipe(stopBubble)
+  .pipe(clicks)
+  .end(this.save);
+```

@@ -3,12 +3,11 @@
   "version": "0.0.1",
   "scripts": ["index.js"],
   "dependencies": {
-    "ripplejs/compiler": "0.0.1",
-    "ripplejs/view": "0.0.4",
-    "ripplejs/interpolate": "0.1.0"
+    "ripplejs/view": "0.0.6",
+    "ripplejs/compiler": "0.0.2"
   },
   "development": {
-    "component/assert": "*",
+    "component/assert": "*"
     "wilsonpage/fastdom": "v0.8.4"
   }
 }
