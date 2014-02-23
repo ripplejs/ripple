@@ -7,7 +7,7 @@
     "ripplejs/compiler": "0.0.2"
   },
   "development": {
-    "component/assert": "*"
+    "component/assert": "*",
     "wilsonpage/fastdom": "v0.8.4"
   }
 }

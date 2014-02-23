@@ -17,74 +17,106 @@ describe('Ripple', function(){
     assert(view.state);
   });
 
-  it('should add directives', function(){
-    View = ripple('<div data-text="name"></div>');
-    View.directive('data-text', function(view, el, attr, value){
-      el.innerHTML = view.get(value);
+
+  describe.skip('components', function () {
+
+    it('should compose other views', function () {
+      var Parent = createView('<div><foo/></div>');
+      var Child = createView('<aside id="child"></aside>');
+      View.component('foo', Child);
+      var view = new View();
+      console.log(view.el.outerHTML);
+      assert(view.el.firstChild.id === "child");
     });
-    var view = new View({
-      name: 'Tom'
+
+    it('should pass properties to the component', function () {
+      var Parent = createView('<div><foo id="world" /></div>');
+      var Child = createView('<aside id="{{id}}"></aside>');
+      View.component('foo', Child);
+      var view = new View();
+      assert(view.el.firstChild.id === "world");
     });
-    assert(view.el.innerHTML === "Tom");
+
+    it('should pass dynamic properties to the component', function () {
+      var Parent = createView('<div><foo id="{{world}}" /></div>');
+      var Child = createView('<aside id="{{id}}"></aside>');
+      View.component('foo', Child);
+      var view = new View({
+        world: 'pluto'
+      });
+      assert(view.el.firstChild.id === "pluto");
+      view.set('world', 'mars')
+      assert(view.el.firstChild.id === "mars");
+    });
+
+    it('should listen for events on the child view', function (done) {
+      var Parent = createView('<div><foo on-change="change" /></div>');
+      Parent.prototype.change = function(val){
+        assert(val === 'foo');
+        done();
+      };
+      var Child = createView('<aside"></aside>');
+      Child.prototype.init = function(){
+        this.emit('change', 'foo')
+      };
+      View.component('foo', Child);
+      var view = new View();
+    });
+
   });
 
-  describe('interpolation', function () {
+ describe.skip('creating child views', function () {
+    var child;
 
     beforeEach(function () {
-      View = ripple('<div></div>');
-    })
-
-    it('should interpolate a string', function(done){
-      var view = new View();
-      view.set('foo', 'bar');
-      view.interpolate('{{foo}}', function(val){
-        assert(val === 'bar');
-        done();
+      View = createView('<div></div>');
+      View.directive('data-text', function(view, node, attr, value){
+        node.innerHTML = view.get(value);
       });
-    })
-
-    it('should add interpolation filters', function(done){
-      View.filter('noobify', function(){
-        return 'noob';
+      View.filter('caps', function(val){
+        return val.toUpperCase();
       });
-      var view = new View();
-      view.set('foo', 'bar');
-      view.interpolate('{{foo | noobify}}', function(val){
-        assert(val === 'noob');
-        done();
+      View.computed('shout', ['content'], function(content){
+        return content.toUpperCase();
       });
-    })
 
-   it('should watch a string for changes', function(done){
-      var count = 0;
-      var view = new View();
-      view.set('foo', 'bar');
-      view.interpolate('{{foo}}', function(val){
-        count++;
-        if(count === 1) assert(val === 'bar');
-        if(count === 2) {
-          assert(val === 'baz');
-          done();
+      child = View.create({
+        data: data,
+        options: {
+          template: '<div id="{{ id | caps }}" data-text="content"></div>'
         }
       });
-      view.set('foo', 'baz');
+
+      child.mount(document.body);
     })
 
-    it('should unwatch a strings changes', function(){
-      var count = 0;
-      var view = new View();
-      view.set('foo', 'bar');
-      var unbind = view.interpolate('{{foo}}', function(val){
-        count++;
-      });
-      unbind();
-      view.set('foo', 'baz');
-      assert(count === 1, count);
-    })
+    afterEach(function () {
+      child.unmount();
+    });
+
+    it('should share directives', function () {
+      assert( child.el.innerHTML === 'test' );
+    });
+
+    it('should share computed properties', function () {
+      assert(child.get('shout') === 'TEST');
+    });
+
+    it.skip('should share default properties', function(){
+
+    });
+
+    it('should share filters', function () {
+      assert( child.el.id === "FOO" );
+    });
+
+    it.skip('should share interpolators', function () {
+
+    });
 
   });
 
-  describe('Attributes', function () {
+  describe('attributes', function () {
 
     beforeEach(function () {
       View = ripple('<div id="foo-{{bar}}" class="{{type}}" hidden="{{hidden}}">{{content}}</div>');
@@ -125,32 +157,20 @@ describe('Ripple', function(){
 
   });
 
+  describe('directives', function () {
 
-  describe('creating child views', function () {
-
-    beforeEach(function () {
-      View = ripple('<div></div>');
-      View.directive('data-text', function(view, node, attr, value){
-        node.innerHTML = view.get(value);
+    it('should add directives', function(){
+      View = createView('<div data-text="name"></div>');
+      View.directive('data-text', function(view, el, attr, value){
+        el.innerHTML = view.get(value);
       });
-      View.filter('caps', function(val){
-        return val.toUpperCase();
+      var view = new View({
+        name: 'Tom'
       });
-    })
-
-    it('should create a child view', function (done) {
-      var Child = View.create('<div id="{{ id | caps }}" data-text="content"></div>');
-      var child = new Child({
-        id: 'foo',
-        content: 'test'
-      });
-      dom.defer(function(){
-        assert( child.el.id === "FOO" );
-        assert( child.el.innerHTML === "test" );
-        done();
-      });
+      assert(view.el.innerHTML === "Tom");
     });
 
   });
+
 
 })
