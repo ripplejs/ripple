@@ -17,7 +17,6 @@ describe('Ripple', function(){
     assert(view.state);
   });
 
-
   describe.skip('components', function () {
 
     it('should compose other views', function () {
