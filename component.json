@@ -4,7 +4,7 @@
   "scripts": ["index.js"],
   "dependencies": {
     "ripplejs/view": "0.0.7",
-    "ripplejs/compiler": "0.0.3"
+    "ripplejs/compiler": "0.0.4"
   },
   "development": {
     "component/assert": "*",
