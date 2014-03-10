@@ -676,6 +676,7 @@ function getEnumerableProperties (object) {
 
 });
 require.register("component-type/index.js", function(exports, require, module){
+
 /**
  * toString ref.
  */
@@ -692,19 +693,20 @@ var toString = Object.prototype.toString;
 
 module.exports = function(val){
   switch (toString.call(val)) {
+    case '[object Function]': return 'function';
     case '[object Date]': return 'date';
     case '[object RegExp]': return 'regexp';
     case '[object Arguments]': return 'arguments';
     case '[object Array]': return 'array';
-    case '[object Error]': return 'error';
+    case '[object String]': return 'string';
   }
 
   if (val === null) return 'null';
   if (val === undefined) return 'undefined';
-  if (val !== val) return 'nan';
   if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
 
-  return typeof val.valueOf();
+  return typeof val;
 };
 
 });
@@ -713,10 +715,11 @@ require.register("component-clone/index.js", function(exports, require, module){
  * Module dependencies.
  */
 
+var type;
 try {
-  var type = require('type');
-} catch (e) {
-  var type = require('type-component');
+  type = require('component-type');
+} catch (_) {
+  type = require('type');
 }
 
 /**
@@ -964,29 +967,12 @@ module.exports = function(){
   emitter(Model);
 
   /**
-   * Set an attribute to be computed and automatically
-   * update when other keys are updated
-   *
-   * @param {String} key
-   * @param {Array} dependencies
-   * @param {Function} fn
+   * Use a plugin
    *
    * @return {Model}
    */
-  Model.computed = function(name, dependencies, fn) {
-    Model.on('construct', function(self){
-      function callback() {
-        var args = dependencies.map(function(key){
-          return self.get(key);
-        });
-        return fn.apply(self, args);
-      }
-      function update() {
-        self.set(name, callback());
-      }
-      self.change(dependencies, update);
-      update();
-    });
+  Model.use = function(fn, options){
+    fn(this, options);
     return this;
   };
 
@@ -1053,6 +1039,116 @@ module.exports = function(){
   return Model;
 };
 });
+require.register("ripplejs-computed/index.js", function(exports, require, module){
+module.exports = function(Model) {
+
+  /**
+   * Stores dependencies being tracked
+   */
+  var tracking;
+
+
+  /**
+   * Store the previous get method. We'll
+   * override it so we can track the dependencies
+   *
+   * @type {Function}
+   */
+  var get = Model.prototype.get;
+
+
+  /**
+   * Start tracking calls to .get
+   *
+   * @return {Array}
+   */
+  function track(){
+    tracking = [];
+    return tracking;
+  }
+
+
+  /**
+   * Stop tracking calls to .get
+   *
+   * @return {void}
+   */
+  function stopTracking(){
+    tracking = null;
+  }
+
+
+  /**
+   * Set an attribute to be computed and automatically
+   * update when other keys are updated
+   *
+   * @param {String} key
+   * @param {Array} dependencies
+   * @param {Function} fn
+   *
+   * @return {Model}
+   */
+  Model.computed = function(name, dependencies, fn) {
+    var args = arguments;
+    Model.on('construct', function(self){
+      if(args.length === 2) {
+        fn = args[1];
+        dependencies = track();
+        fn.call(self);
+        stopTracking();
+        var update = function() {
+          self.set(name, fn.call(self));
+        };
+      }
+      else {
+        var update = function() {
+          var values = dependencies.map(self.get.bind(self));
+          self.set(name, fn.apply(self, values));
+        };
+      }
+      self.change(dependencies, update);
+      update();
+    });
+    return this;
+  };
+
+
+  /**
+   * Override the get method to track dependecies
+   * so we can guess what the computed property needs.
+   *
+   * @param {String} prop
+   */
+  Model.prototype.get = function(prop){
+    if(tracking) tracking.push(prop);
+    return get.apply(this, arguments);
+  };
+
+}
+});
+require.register("ripplejs-accessors/index.js", function(exports, require, module){
+module.exports = function(Model) {
+
+  Model.prototype.updateAccessors = function(){
+    for(var prop in this.props) {
+      if(this[prop] != null) continue;
+      Object.defineProperty(this, prop, {
+        get: function(){
+          return this.get(prop);
+        },
+        set: function(val) {
+          this.set(prop, val);
+        }
+      });
+    }
+  };
+
+  Model.on('construct', function(model){
+    model.updateAccessors();
+  });
+
+};
+});
 require.register("timoxley-to-array/index.js", function(exports, require, module){
 /**
  * Convert an array-like object into an `Array`.
@@ -1092,18 +1188,34 @@ var domify = require('domify');
 var emitter = require('emitter');
 var model = require('model');
 var toArray = require('to-array');
+var computed = require('computed');
+var accessors = require('accessors');
 
+function freeze(Model) {
+  Model.on('construct', function(model){
+    Object.freeze(model.props);
+  });
+}
 
-module.exports = function(template) {
-
+module.exports = function() {
 
   /**
    * Stores the state of the view.
    *
    * @type {Function}
    */
-  var State = model();
+  var State = model()
+    .use(accessors)
+    .use(computed);
 
+  /**
+   * Stores the properties of the view
+   *
+   * @type {Function}
+   */
+  var Props = model()
+    .use(accessors)
+    .use(freeze);
 
   /**
    * The view controls the lifecycle of the
@@ -1114,16 +1226,13 @@ module.exports = function(template) {
    * @param {Object} data
    * @param {Object} options
    */
-  function View(data, options) {
+  function View(props, options) {
     options = options || {};
-    this.state = new State();
+    this.props = new Props(props);
+    this.state = new State(options.state);
     this.owner = options.owner;
     this.root = this.owner ? this.owner.root : this;
-    this.template = options.template || template;
-    View.emit('created', this, data, options);
-    this.set(data);
-    this.el = this.render();
-    View.emit('ready', this);
+    View.emit('created', this, props, options);
   }
 
 
@@ -1143,9 +1252,10 @@ module.exports = function(template) {
    * @return {View}
    */
   View.create = function(options) {
-    return new View(options.data, {
+    return new View(options.props, {
       template: options.template,
-      owner: options.owner
+      owner: options.owner,
+      state: options.state
     });
   };
 
@@ -1179,18 +1289,28 @@ module.exports = function(template) {
    * @return {View}
    */
   View.on = function(event, fn) {
-    if(typeof event !== 'string') {
-      for(var key in event) {
-        View.on(key, event[key]);
-      }
-      return this;
-    }
     emitter.prototype.on.call(this, event, function(){
       var args = toArray(arguments);
       var view = args.shift();
       fn.apply(view, args);
     });
     return this;
+  };
+
+
+  /**
+   * Lookup a property on this view.
+   *
+   * @param {String} prop
+   */
+  View.prototype.lookup = function(prop) {
+    if(this.state.get(prop) !== undefined) {
+      return this.state;
+    }
+    if(this.owner) {
+      return this.owner.lookup(prop);
+    }
+    return this.state;
   };
 
 
@@ -1204,17 +1324,7 @@ module.exports = function(template) {
    * @return {Mixed}
    */
   View.prototype.get = function(key) {
-    if(Array.isArray(key)) {
-      var data = {};
-      var self = this;
-      key.forEach(function(attr){
-        data[attr] = self.get(attr);
-      });
-      return data;
-    }
-    var val = this.state.get(key);
-    if(val === undefined && this.owner) return this.owner.get(key);
-    return val;
+    return this.lookup(key).get(key);
   };
 
 
@@ -1230,7 +1340,6 @@ module.exports = function(template) {
     this.state.set(key, value);
   };
 
-
   /**
    * Watch for a state change
    *
@@ -1240,55 +1349,10 @@ module.exports = function(template) {
    * @return {Function} unbinder
    */
   View.prototype.change = function(key, fn) {
-    var binding = this.state.change(key, fn);
+    var binding = this.lookup(key).change(key, fn);
     this.once('destroy', binding);
     return binding;
   };
-
-
-  /**
-   * Compile this view's template into an element.
-   *
-   * @return {Element}
-   */
-  View.prototype.render = function(){
-    return domify(this.template);
-  };
-
-
-  /**
-   * Append this view to an element
-   *
-   * @param {Element} node
-   *
-   * @return {View}
-   */
-  View.prototype.mount = function(node, replace) {
-    if(replace) {
-      node.parentNode.replaceChild(this.el, node);
-    }
-    else {
-      node.appendChild(this.el);
-    }
-    View.emit('mount', this, node, replace);
-    this.emit('mount', node, replace);
-    return this;
-  };
-
-
-  /**
-   * Remove the element from the DOM
-   *
-   * @return {View}
-   */
-  View.prototype.unmount = function() {
-    if(!this.el.parentNode) return this;
-    this.el.parentNode.removeChild(this.el);
-    View.emit('unmount', this);
-    this.emit('unmount');
-    return this;
-  };
-
 
   /**
    * Remove the element from the DOM
@@ -1298,88 +1362,344 @@ module.exports = function(template) {
   View.prototype.destroy = function() {
     View.emit('destroy', this);
     this.emit('destroy');
-    this.unmount();
     this.off();
   };
-
 
   return View;
 };
 
 });
-require.register("jaycetde-dom-contains/index.js", function(exports, require, module){
-'use strict';
+require.register("component-stack/index.js", function(exports, require, module){
 
-var containsFn
-	, node = window.Node
-;
+/**
+ * Expose `stack()`.
+ */
 
-if (node && node.prototype) {
-	if (node.prototype.contains) {
-		containsFn = node.prototype.contains;
-	} else if (node.prototype.compareDocumentPosition) {
-		containsFn = function (arg) {
-			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
-		};
-	}
+module.exports = stack;
+
+/**
+ * Return the stack.
+ *
+ * @return {Array}
+ * @api public
+ */
+
+function stack() {
+  var orig = Error.prepareStackTrace;
+  Error.prepareStackTrace = function(_, stack){ return stack; };
+  var err = new Error;
+  Error.captureStackTrace(err, arguments.callee);
+  var stack = err.stack;
+  Error.prepareStackTrace = orig;
+  return stack;
 }
+});
+require.register("component-assert/index.js", function(exports, require, module){
 
-if (!containsFn) {
-	containsFn = function (arg) {
-		if (arg) {
-			while ((arg = arg.parentNode)) {
-				if (arg === this) {
-					return true;
-				}
-			}
-		}
-		return false;
-	};
-}
+/**
+ * Module dependencies.
+ */
 
-module.exports = function (a, b) {
-	var adown = a.nodeType === 9 ? a.documentElement : a
-		, bup = b && b.parentNode
-	;
+var stack = require('stack');
+var equals = require('equals');
 
-	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
+/**
+ * Assert `expr` with optional failure `msg`.
+ *
+ * @param {Mixed} expr
+ * @param {String} [msg]
+ * @api public
+ */
+
+module.exports = exports = function (expr, msg) {
+  if (expr) return;
+  throw new Error(msg || message());
 };
 
-});
-require.register("anthonyshort-dom-walk/index.js", function(exports, require, module){
-var array = require('to-array');
-var contains = require('dom-contains');
+/**
+ * Assert `actual` is weak equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
 
-function walk(el, process, done) {
-  var end = done || function(){};
-  var nodes = array(el.childNodes);
+exports.equal = function (actual, expected, msg) {
+  if (actual == expected) return;
+  throw new Error(msg || message());
+};
 
-  function next(){
-    if(nodes.length === 0) return end();
-    var nextNode = nodes.shift();
-    if(!contains(el, nextNode)) return next();
-    walk(nextNode, process, next);
+/**
+ * Assert `actual` is not weak equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.notEqual = function (actual, expected, msg) {
+  if (actual != expected) return;
+  throw new Error(msg || message());
+};
+
+/**
+ * Assert `actual` is deep equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.deepEqual = function (actual, expected, msg) {
+  if (equals(actual, expected)) return;
+  throw new Error(msg || message());
+};
+
+/**
+ * Assert `actual` is not deep equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.notDeepEqual = function (actual, expected, msg) {
+  if (!equals(actual, expected)) return;
+  throw new Error(msg || message());
+};
+
+/**
+ * Assert `actual` is strict equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.strictEqual = function (actual, expected, msg) {
+  if (actual === expected) return;
+  throw new Error(msg || message());
+};
+
+/**
+ * Assert `actual` is not strict equal to `expected`.
+ *
+ * @param {Mixed} actual
+ * @param {Mixed} expected
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.notStrictEqual = function (actual, expected, msg) {
+  if (actual !== expected) return;
+  throw new Error(msg || message());
+};
+
+/**
+ * Assert `block` throws an `error`.
+ *
+ * @param {Function} block
+ * @param {Function} [error]
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.throws = function (block, error, msg) {
+  var err;
+  try {
+    block();
+  } catch (e) {
+    err = e;
   }
+  if (!err) throw new Error(msg || message());
+  if (error && !(err instanceof error)) throw new Error(msg || message());
+};
 
-  process(el, next);
+/**
+ * Assert `block` doesn't throw an `error`.
+ *
+ * @param {Function} block
+ * @param {Function} [error]
+ * @param {String} [msg]
+ * @api public
+ */
+
+exports.doesNotThrow = function (block, error, msg) {
+  var err;
+  try {
+    block();
+  } catch (e) {
+    err = e;
+  }
+  if (error && (err instanceof error)) throw new Error(msg || message());
+  if (err) throw new Error(msg || message());
+};
+
+/**
+ * Create a message from the call stack.
+ *
+ * @return {String}
+ * @api private
+ */
+
+function message() {
+  if (!Error.captureStackTrace) return 'assertion failed';
+  var callsite = stack()[2];
+  var fn = callsite.getFunctionName();
+  var file = callsite.getFileName();
+  var line = callsite.getLineNumber() - 1;
+  var col = callsite.getColumnNumber() - 1;
+  var src = getScript(file);
+  line = src.split('\n')[line].slice(col);
+  var m = line.match(/assert\((.*)\)/);
+  return m && m[1].trim();
 }
 
-module.exports = walk;
+/**
+ * Load contents of `script`.
+ *
+ * @param {String} script
+ * @return {String}
+ * @api private
+ */
+
+function getScript(script) {
+  var xhr = new XMLHttpRequest;
+  xhr.open('GET', script, false);
+  xhr.send(null);
+  return xhr.responseText;
+}
+
 });
-require.register("anthonyshort-attributes/index.js", function(exports, require, module){
-module.exports = function(el) {
-  var attrs = el.attributes,
-      ret = {},
-      attr,
-      i;
+require.register("ripplejs-expression/index.js", function(exports, require, module){
+var props = require('props');
+var unique = require('uniq');
+var cache = {};
 
-  for (i = attrs.length - 1; i >= 0; i--) {
-    attr = attrs.item(i);
-    ret[attr.nodeName] = attr.nodeValue;
+function Expression(str) {
+  this.props = unique(props(str));
+  this.fn = compile(str, this.props);
+}
+
+Expression.prototype.exec = function(obj){
+  var args = obj ? values(obj, this.props) : [];
+  return this.fn.apply(null, args);
+};
+
+function values(obj, keys) {
+  return keys.map(function(key){
+    return obj[key];
+  });
+}
+
+function compile(str, props){
+  if(cache[str]) return cache[str];
+  var args = props.slice();
+  args.push('return ' + str);
+  var fn = Function.apply(null, args);
+  cache[str] = fn;
+  return fn;
+}
+
+module.exports = Expression;
+});
+require.register("component-format-parser/index.js", function(exports, require, module){
+
+/**
+ * Parse the given format `str`.
+ *
+ * @param {String} str
+ * @return {Array}
+ * @api public
+ */
+
+module.exports = function(str){
+	return str.split(/ *\| */).map(function(call){
+		var parts = call.split(':');
+		var name = parts.shift();
+		var args = parseArgs(parts.join(':'));
+
+		return {
+			name: name,
+			args: args
+		};
+	});
+};
+
+/**
+ * Parse args `str`.
+ *
+ * @param {String} str
+ * @return {Array}
+ * @api private
+ */
+
+function parseArgs(str) {
+	var args = [];
+	var re = /"([^"]*)"|'([^']*)'|([^ \t,]+)/g;
+	var m;
+	
+	while (m = re.exec(str)) {
+		args.push(m[2] || m[1] || m[0]);
+	}
+	
+	return args;
+}
+
+});
+require.register("component-indexof/index.js", function(exports, require, module){
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
   }
+  return -1;
+};
+});
+require.register("yields-uniq/index.js", function(exports, require, module){
 
+/**
+ * dependencies
+ */
+
+try {
+  var indexOf = require('indexof');
+} catch(e){
+  var indexOf = require('indexof-component');
+}
+
+/**
+ * Create duplicate free array
+ * from the provided `arr`.
+ *
+ * @param {Array} arr
+ * @param {Array} select
+ * @return {Array}
+ */
+
+module.exports = function (arr, select) {
+  var len = arr.length, ret = [], v;
+  select = select ? (select instanceof Array ? select : [select]) : false;
+
+  for (var i = 0; i < len; i++) {
+    v = arr[i];
+    if (select && !~indexOf(select, v)) {
+      ret.push(v);
+    } else if (!~indexOf(ret, v)) {
+      ret.push(v);
+    }
+  }
   return ret;
 };
+
 });
 require.register("component-props/index.js", function(exports, require, module){
 /**
@@ -1469,16 +1789,319 @@ function prefixed(str) {
 }
 
 });
+require.register("ripplejs-interpolate/index.js", function(exports, require, module){
+var Expression = require('expression');
+var parse = require('format-parser');
+var unique = require('uniq');
+var props = require('props');
+
+/**
+ * Run a value through all filters
+ *
+ * @param  {Mixed}  val    Any value returned from an expression
+ * @param  {Array}  types  The filters eg. currency | float | floor
+ * @param  {Object} fns     Mapping of filter names, eg. currency, to functions
+ * @return {Mixed}
+ */
+function filter(val, types, fns) {
+  fns = fns || {};
+  var filters = parse(types.join('|'));
+  filters.forEach(function(f){
+    var name = f.name.trim();
+    var fn = fns[name];
+    var args = f.args.slice();
+    args.unshift(val);
+    if(!fn) throw new Error('Missing filter named "' + name + '"');
+    val = fn.apply(null, args);
+  });
+  return val;
+}
+
+/**
+ * Create a new interpolator
+ */
+function Interpolate() {
+  this.match = /\{\{([^}]+)\}\}/g;
+  this.filters = {};
+}
+
+/**
+ * Hook for plugins
+ *
+ * @param {Function} fn
+ *
+ * @return {Interpolate}
+ */
+Interpolate.prototype.use = function(fn) {
+  fn(this);
+  return this;
+};
+
+/**
+ * Set the delimiters
+ *
+ * @param {Regex} match
+ *
+ * @return {Interpolate}
+ */
+Interpolate.prototype.delimiters = function(match) {
+  this.match = match;
+  return this;
+};
+
+/**
+ * Check if a string matches the delimiters
+ *
+ * @param {String} input
+ *
+ * @return {Array}
+ */
+Interpolate.prototype.matches = function(input) {
+  var test = new RegExp(this.match.source);
+  var matches = test.exec(input);
+  if(!matches) return [];
+  return matches;
+};
+
+/**
+ * Add a new filter
+ *
+ * @param {String} name
+ * @param {Function} fn
+ *
+ * @return {Interpolate}
+ */
+Interpolate.prototype.filter = function(name, fn){
+  this.filters[name] = fn;
+  return this;
+};
+
+/**
+ * Interpolate a string using the contents
+ * inside of the delimiters
+ *
+ * @param  {String} input
+ * @param  {Object} data    Data to pass to the expressions
+ * @param  {Object} filters Mapping of filters
+ * @return {String}
+ */
+Interpolate.prototype.exec = function(input, data){
+  var parts = input.split('|');
+  var expr = parts.shift();
+  var fn = new Expression(expr);
+  var val = fn.exec(data);
+  if(parts.length) {
+    val = filter(val, parts, this.filters);
+  }
+  return val;
+};
+
+
+/**
+ * Check if a string has interpolation
+ *
+ * @param {String} input
+ *
+ * @return {Boolean}
+ */
+Interpolate.prototype.has = function(input) {
+  return input.search(this.match) > -1;
+};
+
+
+/**
+ * Interpolate as a string and replace each
+ * match with the interpolated value
+ *
+ * @return {String}
+ */
+Interpolate.prototype.replace = function(input, data){
+  var self = this;
+  return input.replace(this.match, function(_, match){
+    var val = self.exec(match, data);
+    return (val == null) ? '' : val;
+  });
+};
+
+
+/**
+ * Get the interpolated value from a string
+ */
+Interpolate.prototype.value = function(input, data){
+  var matches = this.matches(input);
+  if( matches.length === 0 ) return input;
+  if( matches[0].length !== input.length ) return this.replace(input, data);
+  return this.exec(matches[1], data);
+};
+
+
+/**
+ * Get all the interpolated values from a string
+ *
+ * @return {Array} Array of values
+ */
+Interpolate.prototype.values = function(input, data){
+  var self = this;
+  var matches = input.match(this.match);
+  if( !matches ) return [];
+  return matches.map(function(val){
+    return self.value(val, data);
+  });
+};
+
+
+/**
+ * Find all the properties used in all expressions in a string
+ * @param  {String} str
+ * @return {Array}
+ */
+Interpolate.prototype.props = function(str) {
+  var m;
+  var arr = [];
+  var re = this.match;
+  while (m = re.exec(str)) {
+    var expr = m[1].split('|')[0];
+    arr = arr.concat(props(expr));
+  }
+  return unique(arr);
+};
+
+
+module.exports = Interpolate;
+});
+require.register("ripplejs-view-interpolate/index.js", function(exports, require, module){
+var Interpolator = require('interpolate');
+
+module.exports = function(View){
+
+  /**
+   * Interpolation engine
+   *
+   * @type {Interpolator}
+   */
+  var interpolator = new Interpolator();
+
+  /**
+   * Add an interpolation filter
+   *
+   * @param {String} name
+   * @param {Function} fn
+   *
+   * @return {View}
+   */
+  View.filter = function(name, fn) {
+    interpolator.filter(name, fn);
+    return this;
+  };
+
+  /**
+   * Set the expression delimiters
+   *
+   * @param {Regex} match
+   *
+   * @return {View}
+   */
+  View.delimiters = function(match) {
+    interpolator.delimiters(match);
+    return this;
+  };
+
+  /**
+   * Check if a filter is available
+   *
+   * @param {String} name
+   *
+   * @return {Boolean}
+   */
+  View.prototype.hasFilter = function(name) {
+    return interpolator.filters[name] != null;
+  };
+
+  /**
+   * Check if a string has expressions
+   *
+   * @param {String} str
+   *
+   * @return {Boolean}
+   */
+  View.prototype.hasInterpolation = function(str) {
+    return interpolator.has(str);
+  };
+
+  /**
+   * Interpolate a string using the views props and state.
+   * Takes a callback that will be fired whenever the
+   * attributes used in the string change.
+   *
+   * @param {String} str
+   * @param {Function} callback
+   *
+   * @return {void}
+   */
+  View.prototype.interpolate = function(str, callback) {
+    var self = this;
+
+    // If the string has no expressions, we can just return
+    // the string one, since it never needs to change.
+    if(this.hasInterpolation(str) === false) {
+      return callback ? callback(str) : str;
+    }
+
+    // Get all of the properties used withing the string
+    // in all expressions it can find
+    var attrs = interpolator.props(str);
+
+    function render() {
+      var data = {};
+      attrs.forEach(function(attr){
+        var value = self.get(attr);
+        if(value === undefined) {
+          throw new Error('Can\'t find interpolation property named "' + attr + '"');
+        }
+        data[attr] = value;
+      });
+      return interpolator.value(str, data);
+    }
+
+    if(callback) {
+      // Whenever any of the properties used in the
+      // expression changes, we render it again
+      attrs.map(function(attr){
+        return self.change(attr, function(){
+          callback(render());
+        });
+      });
+      // Immediately render the string
+      callback(render());
+      return;
+    }
+
+    return render();
+  };
+
+};
+});
+require.register("anthonyshort-attributes/index.js", function(exports, require, module){
+module.exports = function(el) {
+  var attrs = el.attributes,
+      ret = {},
+      attr,
+      i;
+
+  for (i = attrs.length - 1; i >= 0; i--) {
+    attr = attrs.item(i);
+    ret[attr.nodeName] = attr.nodeValue;
+  }
+
+  return ret;
+};
+});
 require.register("component-to-function/index.js", function(exports, require, module){
 /**
  * Module Dependencies
  */
 
-try {
-  var expr = require('props');
-} catch(e) {
-  var expr = require('props-component');
-}
+var expr = require('props');
 
 /**
  * Expose `toFunction()`.
@@ -1600,6 +2223,153 @@ function get(str) {
   return str;
 }
 
+});
+require.register("component-each/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var type = require('type');
+var toFunction = require('to-function');
+
+/**
+ * HOP reference.
+ */
+
+var has = Object.prototype.hasOwnProperty;
+
+/**
+ * Iterate the given `obj` and invoke `fn(val, i)`
+ * in optional context `ctx`.
+ *
+ * @param {String|Array|Object} obj
+ * @param {Function} fn
+ * @param {Object} [ctx]
+ * @api public
+ */
+
+module.exports = function(obj, fn, ctx){
+  fn = toFunction(fn);
+  ctx = ctx || this;
+  switch (type(obj)) {
+    case 'array':
+      return array(obj, fn, ctx);
+    case 'object':
+      if ('number' == typeof obj.length) return array(obj, fn, ctx);
+      return object(obj, fn, ctx);
+    case 'string':
+      return string(obj, fn, ctx);
+  }
+};
+
+/**
+ * Iterate string chars.
+ *
+ * @param {String} obj
+ * @param {Function} fn
+ * @param {Object} ctx
+ * @api private
+ */
+
+function string(obj, fn, ctx) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn.call(ctx, obj.charAt(i), i);
+  }
+}
+
+/**
+ * Iterate object keys.
+ *
+ * @param {Object} obj
+ * @param {Function} fn
+ * @param {Object} ctx
+ * @api private
+ */
+
+function object(obj, fn, ctx) {
+  for (var key in obj) {
+    if (has.call(obj, key)) {
+      fn.call(ctx, key, obj[key]);
+    }
+  }
+}
+
+/**
+ * Iterate array-ish.
+ *
+ * @param {Array|Object} obj
+ * @param {Function} fn
+ * @param {Object} ctx
+ * @api private
+ */
+
+function array(obj, fn, ctx) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn.call(ctx, obj[i], i);
+  }
+}
+
+});
+require.register("jaycetde-dom-contains/index.js", function(exports, require, module){
+'use strict';
+
+var containsFn
+	, node = window.Node
+;
+
+if (node && node.prototype) {
+	if (node.prototype.contains) {
+		containsFn = node.prototype.contains;
+	} else if (node.prototype.compareDocumentPosition) {
+		containsFn = function (arg) {
+			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
+		};
+	}
+}
+
+if (!containsFn) {
+	containsFn = function (arg) {
+		if (arg) {
+			while ((arg = arg.parentNode)) {
+				if (arg === this) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+}
+
+module.exports = function (a, b) {
+	var adown = a.nodeType === 9 ? a.documentElement : a
+		, bup = b && b.parentNode
+	;
+
+	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
+};
+
+});
+require.register("anthonyshort-dom-walk/index.js", function(exports, require, module){
+var array = require('to-array');
+var contains = require('dom-contains');
+
+function walk(el, process, done, root) {
+  root = root || el;
+  var end = done || function(){};
+  var nodes = array(el.childNodes);
+
+  function next(){
+    if(nodes.length === 0) return end();
+    var nextNode = nodes.shift();
+    if(!contains(root, nextNode)) return next();
+    walk(nextNode, process, next, root);
+  }
+
+  process(el, next);
+}
+
+module.exports = walk;
 });
 require.register("component-find/index.js", function(exports, require, module){
 
@@ -2121,528 +2891,15 @@ require.register("wilsonpage-fastdom/index.js", function(exports, require, modul
 })(window.fastdom);
 
 });
-require.register("component-stack/index.js", function(exports, require, module){
-
-/**
- * Expose `stack()`.
- */
-
-module.exports = stack;
-
-/**
- * Return the stack.
- *
- * @return {Array}
- * @api public
- */
-
-function stack() {
-  var orig = Error.prepareStackTrace;
-  Error.prepareStackTrace = function(_, stack){ return stack; };
-  var err = new Error;
-  Error.captureStackTrace(err, arguments.callee);
-  var stack = err.stack;
-  Error.prepareStackTrace = orig;
-  return stack;
-}
-});
-require.register("component-assert/index.js", function(exports, require, module){
-
-/**
- * Module dependencies.
- */
-
-var stack = require('stack');
-var equals = require('equals');
-
-/**
- * Assert `expr` with optional failure `msg`.
- *
- * @param {Mixed} expr
- * @param {String} [msg]
- * @api public
- */
-
-module.exports = exports = function (expr, msg) {
-  if (expr) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is weak equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.equal = function (actual, expected, msg) {
-  if (actual == expected) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is not weak equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.notEqual = function (actual, expected, msg) {
-  if (actual != expected) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is deep equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.deepEqual = function (actual, expected, msg) {
-  if (equals(actual, expected)) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is not deep equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.notDeepEqual = function (actual, expected, msg) {
-  if (!equals(actual, expected)) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is strict equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.strictEqual = function (actual, expected, msg) {
-  if (actual === expected) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `actual` is not strict equal to `expected`.
- *
- * @param {Mixed} actual
- * @param {Mixed} expected
- * @param {String} [msg]
- * @api public
- */
-
-exports.notStrictEqual = function (actual, expected, msg) {
-  if (actual !== expected) return;
-  throw new Error(msg || message());
-};
-
-/**
- * Assert `block` throws an `error`.
- *
- * @param {Function} block
- * @param {Function} [error]
- * @param {String} [msg]
- * @api public
- */
-
-exports.throws = function (block, error, msg) {
-  var err;
-  try {
-    block();
-  } catch (e) {
-    err = e;
-  }
-  if (!err) throw new Error(msg || message());
-  if (error && !(err instanceof error)) throw new Error(msg || message());
-};
-
-/**
- * Assert `block` doesn't throw an `error`.
- *
- * @param {Function} block
- * @param {Function} [error]
- * @param {String} [msg]
- * @api public
- */
-
-exports.doesNotThrow = function (block, error, msg) {
-  var err;
-  try {
-    block();
-  } catch (e) {
-    err = e;
-  }
-  if (error && (err instanceof error)) throw new Error(msg || message());
-  if (err) throw new Error(msg || message());
-};
-
-/**
- * Create a message from the call stack.
- *
- * @return {String}
- * @api private
- */
-
-function message() {
-  if (!Error.captureStackTrace) return 'assertion failed';
-  var callsite = stack()[2];
-  var fn = callsite.getFunctionName();
-  var file = callsite.getFileName();
-  var line = callsite.getLineNumber() - 1;
-  var col = callsite.getColumnNumber() - 1;
-  var src = getScript(file);
-  line = src.split('\n')[line].slice(col);
-  var m = line.match(/assert\((.*)\)/);
-  return m && m[1].trim();
-}
-
-/**
- * Load contents of `script`.
- *
- * @param {String} script
- * @return {String}
- * @api private
- */
-
-function getScript(script) {
-  var xhr = new XMLHttpRequest;
-  xhr.open('GET', script, false);
-  xhr.send(null);
-  return xhr.responseText;
-}
-
-});
-require.register("ripplejs-expression/index.js", function(exports, require, module){
-var props = require('props');
-var unique = require('uniq');
-var cache = {};
-
-function Expression(str) {
-  this.props = unique(props(str));
-  this.fn = compile(str, this.props);
-}
-
-Expression.prototype.exec = function(obj){
-  var args = obj ? values(obj, this.props) : [];
-  return this.fn.apply(null, args);
-};
-
-function values(obj, keys) {
-  return keys.map(function(key){
-    return obj[key];
-  });
-}
-
-function compile(str, props){
-  if(cache[str]) return cache[str];
-  var args = props.slice();
-  args.push('return ' + str);
-  var fn = Function.apply(null, args);
-  cache[str] = fn;
-  return fn;
-}
-
-module.exports = Expression;
-});
-require.register("component-format-parser/index.js", function(exports, require, module){
-
-/**
- * Parse the given format `str`.
- *
- * @param {String} str
- * @return {Array}
- * @api public
- */
-
-module.exports = function(str){
-	return str.split(/ *\| */).map(function(call){
-		var parts = call.split(':');
-		var name = parts.shift();
-		var args = parseArgs(parts.join(':'));
-
-		return {
-			name: name,
-			args: args
-		};
-	});
-};
-
-/**
- * Parse args `str`.
- *
- * @param {String} str
- * @return {Array}
- * @api private
- */
-
-function parseArgs(str) {
-	var args = [];
-	var re = /"([^"]*)"|'([^']*)'|([^ \t,]+)/g;
-	var m;
-	
-	while (m = re.exec(str)) {
-		args.push(m[2] || m[1] || m[0]);
-	}
-	
-	return args;
-}
-
-});
-require.register("component-indexof/index.js", function(exports, require, module){
-
-var indexOf = [].indexOf;
-
-module.exports = function(arr, obj){
-  if (indexOf) return arr.indexOf(obj);
-  for (var i = 0; i < arr.length; ++i) {
-    if (arr[i] === obj) return i;
-  }
-  return -1;
-};
-});
-require.register("yields-uniq/index.js", function(exports, require, module){
-
-/**
- * dependencies
- */
-
-try {
-  var indexOf = require('indexof');
-} catch(e){
-  var indexOf = require('indexof-component');
-}
-
-/**
- * Create duplicate free array
- * from the provided `arr`.
- *
- * @param {Array} arr
- * @param {Array} select
- * @return {Array}
- */
-
-module.exports = function (arr, select) {
-  var len = arr.length, ret = [], v;
-  select = select ? (select instanceof Array ? select : [select]) : false;
-
-  for (var i = 0; i < len; i++) {
-    v = arr[i];
-    if (select && !~indexOf(select, v)) {
-      ret.push(v);
-    } else if (!~indexOf(ret, v)) {
-      ret.push(v);
-    }
-  }
-  return ret;
-};
-
-});
-require.register("ripplejs-interpolate/index.js", function(exports, require, module){
-var Expression = require('expression');
-var parse = require('format-parser');
-var unique = require('uniq');
-var props = require('props');
-
-/**
- * Run a value through all filters
- *
- * @param  {Mixed}  val    Any value returned from an expression
- * @param  {Array}  types  The filters eg. currency | float | floor
- * @param  {Object} fns     Mapping of filter names, eg. currency, to functions
- * @return {Mixed}
- */
-function filter(val, types, fns) {
-  fns = fns || {};
-  var filters = parse(types.join('|'));
-  filters.forEach(function(f){
-    var name = f.name.trim();
-    var fn = fns[name];
-    var args = f.args.slice();
-    args.unshift(val);
-    if(!fn) throw new Error('Missing filter named "' + name + '"');
-    val = fn.apply(null, args);
-  });
-  return val;
-}
-
-/**
- * Create a new interpolator
- */
-function Interpolate() {
-  this.match = /\{\{([^}]+)\}\}/g;
-  this.filters = {};
-}
-
-/**
- * Hook for plugins
- *
- * @param {Function} fn
- *
- * @return {Interpolate}
- */
-Interpolate.prototype.use = function(fn) {
-  fn(this);
-  return this;
-};
-
-/**
- * Set the delimiters
- *
- * @param {Regex} match
- *
- * @return {Interpolate}
- */
-Interpolate.prototype.delimiters = function(match) {
-  this.match = match;
-  return this;
-};
-
-/**
- * Check if a string matches the delimiters
- *
- * @param {String} input
- *
- * @return {Array}
- */
-Interpolate.prototype.matches = function(input) {
-  var test = new RegExp(this.match.source);
-  var matches = test.exec(input);
-  if(!matches) return [];
-  return matches;
-};
-
-/**
- * Add a new filter
- *
- * @param {String} name
- * @param {Function} fn
- *
- * @return {Interpolate}
- */
-Interpolate.prototype.filter = function(name, fn){
-  this.filters[name] = fn;
-  return this;
-};
-
-/**
- * Interpolate a string using the contents
- * inside of the delimiters
- *
- * @param  {String} input
- * @param  {Object} data    Data to pass to the expressions
- * @param  {Object} filters Mapping of filters
- * @return {String}
- */
-Interpolate.prototype.exec = function(input, data){
-  var parts = input.split('|');
-  var expr = parts.shift();
-  var fn = new Expression(expr);
-  var val = fn.exec(data);
-  if(parts.length) {
-    val = filter(val, parts, this.filters);
-  }
-  return val;
-};
-
-
-/**
- * Check if a string has interpolation
- *
- * @param {String} input
- *
- * @return {Boolean}
- */
-Interpolate.prototype.has = function(input) {
-  return input.search(this.match) > -1;
-};
-
-
-/**
- * Interpolate as a string and replace each
- * match with the interpolated value
- *
- * @return {String}
- */
-Interpolate.prototype.replace = function(input, data){
-  var self = this;
-  return input.replace(this.match, function(_, match){
-    var val = self.exec(match, data);
-    return (val == null) ? '' : val;
-  });
-};
-
-
-/**
- * Get the interpolated value from a string
- */
-Interpolate.prototype.value = function(input, data){
-  var matches = this.matches(input);
-  if( matches.length === 0 ) return input;
-  if( matches[0].length !== input.length ) return this.replace(input, data);
-  return this.exec(matches[1], data);
-};
-
-
-/**
- * Get all the interpolated values from a string
- *
- * @return {Array} Array of values
- */
-Interpolate.prototype.values = function(input, data){
-  var self = this;
-  var matches = input.match(this.match);
-  if( !matches ) return [];
-  return matches.map(function(val){
-    return self.value(val, data);
-  });
-};
-
-
-/**
- * Find all the properties used in all expressions in a string
- * @param  {String} str
- * @return {Array}
- */
-Interpolate.prototype.props = function(str) {
-  var m;
-  var arr = [];
-  var re = this.match;
-  while (m = re.exec(str)) {
-    var expr = m[1].split('|')[0];
-    arr = arr.concat(props(expr));
-  }
-  return unique(arr);
-};
-
-
-module.exports = Interpolate;
-});
 require.register("ripplejs-compiler/index.js", function(exports, require, module){
 var walk = require('dom-walk');
-var attributes = require('attributes');
 var emitter = require('emitter');
 var find = require('find');
 var isBoolean = require('is-boolean-attribute');
 var dom = require('fastdom');
-var Interpolator = require('interpolate');
 var domify = require('domify');
-
+var each = require('each');
+var attrs = require('attributes');
 
 /**
  * Attach the view to a DocumentFragment
@@ -2663,10 +2920,10 @@ function attachToFragment(el) {
  * a scope and process each node going down the tree. Whenever
  * it finds a node matching a directive it will process it.
  */
-function Compiler() {
+function Compiler(options) {
   this.components = [];
   this.directives = [];
-  this.interpolator = new Interpolator();
+  this.options = options;
 }
 
 
@@ -2723,32 +2980,6 @@ Compiler.prototype.directive = function(matches, fn) {
   return this;
 };
 
-
-/**
- * Add an expression filter
- *
- * @param {String} name
- * @param {Function} fn
- */
-Compiler.prototype.filter = function(name, fn) {
-  this.interpolator.filter(name, fn);
-  return this;
-};
-
-
-/**
- * Set the template delimiters
- *
- * @param {Regex} match
- *
- * @return {View}
- */
-Compiler.prototype.delimiters = function(match) {
-  this.interpolator.delimiters(match);
-  return this;
-};
-
-
 /**
  * Check if there's a component for this element
  *
@@ -2783,7 +3014,7 @@ Compiler.prototype.getAttributeBinding = function(attr) {
 Compiler.prototype.getBinding = function(name, bindings) {
   var matched = find(bindings, function(binding){
     if(typeof binding.matches === 'string') {
-      if(name === binding.matches) return binding;
+      if(name === binding.matches.toLowerCase()) return binding;
       return;
     }
     if(binding.matches.test(name)){
@@ -2801,9 +3032,11 @@ Compiler.prototype.getBinding = function(name, bindings) {
  *
  * @return {Element}
  */
-Compiler.prototype.render = function(view, el) {
+Compiler.prototype.render = function(template, view) {
   var self = this;
+  var el = domify(template);
   this.view = view;
+  this.root = el;
   attachToFragment(el);
   walk(el, function(node, next){
     if(node.nodeType === 3) {
@@ -2814,51 +3047,7 @@ Compiler.prototype.render = function(view, el) {
     }
     next();
   });
-  this.view = null;
-  return el;
-};
-
-
-/**
- * Run an interpolation on the string using the state. Whenever
- * the model changes it will render the string again
- *
- * @param {String} str
- * @param {Function} callback
- *
- * @return {Function} a function to unbind the interpolation
- */
-Compiler.prototype.interpolate = function(str, callback) {
-  var self = this;
-  var view = this.view;
-
-  if( this.hasInterpolation(str) === false ) {
-    return callback(str);
-  }
-
-  var attrs = this.interpolator.props(str);
-
-  function render() {
-    return self.interpolator.value(str, view.get(attrs));
-  }
-
-  callback(render());
-
-  view.change(attrs, function(){
-    callback(render());
-  });
-};
-
-
-/**
- * Check if a string has expressions
- *
- * @param {String} str
- *
- * @return {Boolean}
- */
-Compiler.prototype.hasInterpolation = function(str) {
-  return this.interpolator.has(str);
+  return this.root;
 };
 
 
@@ -2872,9 +3061,17 @@ Compiler.prototype.hasInterpolation = function(str) {
  * @return {void}
  */
 Compiler.prototype.processTextNode = function(node) {
-  this.interpolate(node.data, function(val){
+  this.view.interpolate(node.data, function(val){
     dom.write(function(){
-      node.data = val;
+      if(val && val.nodeType) {
+        node.parentNode.replaceChild(val, node);
+        node = val;
+      }
+      else {
+        var text = document.createTextNode(typeof val === 'string' ? val : '');
+        node.parentNode.replaceChild(text, node);
+        node = text;
+      }
     });
   });
 };
@@ -2891,47 +3088,9 @@ Compiler.prototype.processTextNode = function(node) {
  * @return {boolean}
  */
 Compiler.prototype.processNode = function(node) {
-  var view = this.view;
-
-  var Component = this.getComponentBinding(node);
-
-  if(!Component) {
-    return this.processAttributes(node);
-  }
-
-  var component = Component.create({
-    owner: view,
-    template: (node.innerHTML !== "") ? node.innerHTML : null
-  });
-
-  for (var i = node.attributes.length - 1; i >= 0; i--) {
-    var attr = node.attributes[i];
-
-    // Bind events
-    if(attr.name.indexOf('on-') === 0) {
-      var eventName = attr.name.replace('on-', '');
-      var method = attr.value;
-      var fn = view[method];
-      if(!fn) throw new Error('Missing method');
-      component.on(eventName, fn.bind(view));
-    }
-
-    // Bind properties
-    else {
-      this.interpolate(attr.value, function(val){
-        component.set(attr.name, val);
-      });
-    }
-  }
-
-  view.once('mount', function(){
-    component.mount(node, true);
-    if(node === this.el) this.el = component.el;
-  });
-
-  view.on('destroy', function(){
-    component.destroy();
-  });
+  var fn = this.getComponentBinding(node);
+  if(!fn) return this.processAttributes(node);
+  fn.call(this, node, this.view);
 };
 
 
@@ -2948,17 +3107,16 @@ Compiler.prototype.processNode = function(node) {
 Compiler.prototype.processAttributes = function(node) {
   var view = this.view;
   var self = this;
-  var attrs = attributes(node);
-  function process(attr){
+
+  each(attrs(node), function(attr, value){
     var binding = self.getAttributeBinding(attr);
     if(binding) {
-      binding.call(self, view, node, attr, attrs[attr]);
+      binding.call(self, view, node, attr, value);
     }
     else {
-      self.interpolateAttribute(node, attr);
+      self.interpolateAttribute(node, attr, value);
     }
-  }
-  Object.keys(attrs).forEach(process);
+  });
 };
 
 
@@ -2972,9 +3130,8 @@ Compiler.prototype.processAttributes = function(node) {
  * @api private
  * @return {void}
  */
-Compiler.prototype.interpolateAttribute = function(node, attr) {
-  var attrs = attributes(node);
-  this.interpolate(attrs[attr], function(val){
+Compiler.prototype.interpolateAttribute = function(node, attr, value) {
+  this.view.interpolate(value, function(val){
     dom.write(function(){
       if(isBoolean(attr) && !val) {
         node.removeAttribute(attr);
@@ -2986,95 +3143,166 @@ Compiler.prototype.interpolateAttribute = function(node, attr) {
   });
 };
 
+module.exports = Compiler;
+});
+require.register("ripplejs-view-compiler/index.js", function(exports, require, module){
+var Compiler = require('compiler');
+var each = require('each');
+var attrs = require('attributes');
 
-module.exports = function(View){
-
-  /**
-   * Compiler that renders binds the model to
-   * the DOM elements and manages the bindings
-   *
-   * @type {Compiler}
-   */
-  var compiler = new Compiler();
-
+module.exports = function(template) {
 
   /**
-   * Add a component
+   * Return a plugin
    *
-   * @param {String} match
-   * @param {Function} fn
-   *
-   * @return {View}
+   * @param {View} View
    */
-  View.compose = function(match, fn) {
-    compiler.component(match, fn);
-    return this;
+  return function(View) {
+
+    /**
+     * Compiler that renders binds the view to
+     * the DOM and manages the bindings
+     *
+     * @type {Compiler}
+     */
+    var compiler = new Compiler();
+
+    /**
+     * Set the compiler on the view when it
+     * is created. This means the instances will
+     * have a reference to the compiler
+     */
+    View.on('created', function(){
+      this.compiler = compiler;
+    });
+
+    /**
+     * Unmount when the view is destroyed
+     */
+    View.on('destroy', function(){
+      this.unmount();
+    });
+
+    /**
+     * Add a component
+     *
+     * @param {String} match
+     * @param {Function} fn
+     *
+     * @return {View}
+     */
+    View.compose = function(match, Component) {
+      compiler.component(match, function(node, view){
+
+        var props = {};
+        each(attrs(node), function(name, value){
+          props[name] = view.interpolate(value);
+        });
+
+        var component = Component.create({
+          owner: view,
+          props: props
+        });
+
+        each(attrs(node), function(name, value){
+          view.interpolate(value, function(val){
+            component.props.set(name, val);
+          });
+        });
+
+        component.mount(node, {
+          replace: true,
+          template: (node.innerHTML !== "") ? node.innerHTML : null
+        });
+
+        if(this.root === node) {
+          this.root = component.el;
+        }
+
+        view.on('destroy', function(){
+          component.destroy();
+        });
+
+      });
+      return this;
+    };
+
+    /**
+     * Add a directive
+     *
+     * @param {String|Regex} match
+     * @param {Function} fn
+     *
+     * @return {View}
+     */
+    View.directive = function(match, fn) {
+      compiler.directive(match, fn);
+      return this;
+    };
+
+    /**
+     * Append this view to an element
+     *
+     * @param {Element} node
+     *
+     * @return {View}
+     */
+    View.prototype.mount = function(node, options) {
+      options = options || {};
+      var comp = options.compiler || compiler;
+      var html = options.template || template;
+      if(!this.el) {
+        this.el = comp.render(html, this);
+      }
+      if(options.replace) {
+        node.parentNode.replaceChild(this.el, node);
+      }
+      else {
+        node.appendChild(this.el);
+      }
+      View.emit('mount', this, node, options);
+      this.emit('mount', node, options);
+      return this;
+    };
+
+    /**
+     * Remove the element from the DOM
+     *
+     * @return {View}
+     */
+    View.prototype.unmount = function() {
+      if(!this.el || !this.el.parentNode) return this;
+      this.el.parentNode.removeChild(this.el);
+      this.el = null;
+      View.emit('unmount', this);
+      this.emit('unmount');
+      return this;
+    };
+
   };
-
-
-  /**
-   * Add a directive
-   *
-   * @param {String|Regex} match
-   * @param {Function} fn
-   *
-   * @return {View}
-   */
-  View.directive = function(match, fn) {
-    compiler.directive(match, fn);
-    return this;
-  };
-
-
-  /**
-   * Add an interpolation filter
-   *
-   * @param {String} name
-   * @param {Function} fn
-   *
-   * @return {View}
-   */
-  View.filter = function(name, fn) {
-    compiler.filter(name, fn);
-    return this;
-  };
-
-
-  /**
-   * Set the expression delimiters
-   *
-   * @param {Regex} match
-   *
-   * @return {View}
-   */
-  View.delimiters = function(match) {
-    compiler.delimiters(match);
-    return this;
-  };
-
-
-  /**
-   * Render the view using the compiler
-   *
-   * @return {Element}
-   */
-  View.prototype.render = function() {
-    var el = domify(this.template);
-    return compiler.render(this, el);
-  };
-
-
 };
 });
 require.register("ripple/index.js", function(exports, require, module){
 var view = require('view');
-var compiler = require('compiler');
+var interpolate = require('view-interpolate');
+var compiler = require('view-compiler');
 
 module.exports = function(template) {
-  return view(template)
-    .use(compiler);
+  return view()
+    .use(interpolate)
+    .use(compiler(template));
 };
+
+
 });
+
+
+
+
+
+
+
+
 
 
 
@@ -3129,11 +3357,50 @@ require.alias("component-clone/index.js", "ripplejs-path-observer/deps/clone/ind
 require.alias("component-type/index.js", "component-clone/deps/type/index.js");
 
 require.alias("ripplejs-path-observer/index.js", "ripplejs-path-observer/index.js");
+require.alias("ripplejs-computed/index.js", "ripplejs-view/deps/computed/index.js");
+
+require.alias("ripplejs-accessors/index.js", "ripplejs-view/deps/accessors/index.js");
+
 require.alias("timoxley-to-array/index.js", "ripplejs-view/deps/to-array/index.js");
 
 require.alias("ripplejs-view/index.js", "ripplejs-view/index.js");
-require.alias("ripplejs-compiler/index.js", "ripple/deps/compiler/index.js");
-require.alias("ripplejs-compiler/index.js", "compiler/index.js");
+require.alias("ripplejs-view-interpolate/index.js", "ripple/deps/view-interpolate/index.js");
+require.alias("ripplejs-view-interpolate/index.js", "view-interpolate/index.js");
+require.alias("ripplejs-interpolate/index.js", "ripplejs-view-interpolate/deps/interpolate/index.js");
+require.alias("ripplejs-interpolate/index.js", "ripplejs-view-interpolate/deps/interpolate/index.js");
+require.alias("component-assert/index.js", "ripplejs-interpolate/deps/assert/index.js");
+require.alias("component-stack/index.js", "component-assert/deps/stack/index.js");
+
+require.alias("jkroso-equals/index.js", "component-assert/deps/equals/index.js");
+require.alias("jkroso-type/index.js", "jkroso-equals/deps/type/index.js");
+
+require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
+require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
+require.alias("component-props/index.js", "ripplejs-expression/deps/props/index.js");
+
+require.alias("yields-uniq/index.js", "ripplejs-expression/deps/uniq/index.js");
+require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
+
+require.alias("ripplejs-expression/index.js", "ripplejs-expression/index.js");
+require.alias("component-format-parser/index.js", "ripplejs-interpolate/deps/format-parser/index.js");
+
+require.alias("yields-uniq/index.js", "ripplejs-interpolate/deps/uniq/index.js");
+require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
+
+require.alias("component-props/index.js", "ripplejs-interpolate/deps/props/index.js");
+
+require.alias("ripplejs-interpolate/index.js", "ripplejs-interpolate/index.js");
+require.alias("ripplejs-view-compiler/index.js", "ripple/deps/view-compiler/index.js");
+require.alias("ripplejs-view-compiler/index.js", "view-compiler/index.js");
+require.alias("anthonyshort-attributes/index.js", "ripplejs-view-compiler/deps/attributes/index.js");
+
+require.alias("component-each/index.js", "ripplejs-view-compiler/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+require.alias("component-props/index.js", "component-to-function/deps/props/index.js");
+
+require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+require.alias("ripplejs-compiler/index.js", "ripplejs-view-compiler/deps/compiler/index.js");
 require.alias("anthonyshort-dom-walk/index.js", "ripplejs-compiler/deps/dom-walk/index.js");
 require.alias("anthonyshort-dom-walk/index.js", "ripplejs-compiler/deps/dom-walk/index.js");
 require.alias("timoxley-to-array/index.js", "anthonyshort-dom-walk/deps/to-array/index.js");
@@ -3180,6 +3447,12 @@ require.alias("component-props/index.js", "ripplejs-interpolate/deps/props/index
 
 require.alias("ripplejs-interpolate/index.js", "ripplejs-interpolate/index.js");
 require.alias("component-domify/index.js", "ripplejs-compiler/deps/domify/index.js");
+
+require.alias("component-each/index.js", "ripplejs-compiler/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+require.alias("component-props/index.js", "component-to-function/deps/props/index.js");
+
+require.alias("component-type/index.js", "component-each/deps/type/index.js");
 if (typeof exports == "object") {
   module.exports = require("ripple");
 } else if (typeof define == "function" && define.amd) {

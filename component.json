@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "scripts": ["index.js"],
   "dependencies": {
-    "ripplejs/view": "0.0.7",
-    "ripplejs/compiler": "0.0.4"
+    "ripplejs/view": "0.2.0",
+    "ripplejs/view-interpolate": "0.1.0",
+    "ripplejs/view-compiler": "0.0.2"
   },
   "development": {
     "component/assert": "*",
