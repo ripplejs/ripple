@@ -1128,21 +1128,54 @@ module.exports = function(Model) {
 });
 require.register("ripplejs-accessors/index.js", function(exports, require, module){
 module.exports = function(Model) {
+  var set = Model.prototype.set;
 
-  Model.prototype.updateAccessors = function(){
-    for(var prop in this.props) {
-      if(this[prop] != null) continue;
-      Object.defineProperty(this, prop, {
-        get: function(){
-          return this.get(prop);
-        },
-        set: function(val) {
-          this.set(prop, val);
-        }
-      });
-    }
+  /**
+   * Add a single accessor for a property.
+   *
+   * @param {String} prop
+   */
+  Model.prototype.addAccessor = function(prop) {
+    if(prop in this) return this;
+    Object.defineProperty(this, prop, {
+      get: function(){
+        return this.get(prop);
+      },
+      set: function(val) {
+        this.set(prop, val);
+      }
+    });
+    return this;
   };
 
+  /**
+   * Update all accessors
+   */
+  Model.prototype.updateAccessors = function(){
+    for(var prop in this.props) {
+      this.addAccessor(prop);
+    }
+    return this;
+  };
+
+  /**
+   * Whenever a property is set, it should
+   * add an accessor for that property.
+   */
+  Model.prototype.set = function(prop){
+    if(typeof prop === 'string') {
+      this.addAccessor(prop);
+    }
+    else {
+      for(var key in prop) this.addAccessor(key);
+    }
+    return set.apply(this, arguments);
+  };
+
+  /**
+   * When the model is created we need
+   * to create accessors for all properties
+   */
   Model.on('construct', function(model){
     model.updateAccessors();
   });
@@ -3034,10 +3067,9 @@ Compiler.prototype.getBinding = function(name, bindings) {
  */
 Compiler.prototype.render = function(template, view) {
   var self = this;
-  var el = domify(template);
   this.view = view;
-  this.root = el;
-  attachToFragment(el);
+  var el = domify(template);
+  var fragment = attachToFragment(el);
   walk(el, function(node, next){
     if(node.nodeType === 3) {
       self.processTextNode(node);
@@ -3047,7 +3079,7 @@ Compiler.prototype.render = function(template, view) {
     }
     next();
   });
-  return this.root;
+  return fragment.firstChild;
 };
 
 
@@ -3215,10 +3247,6 @@ module.exports = function(template) {
           template: (node.innerHTML !== "") ? node.innerHTML : null
         });
 
-        if(this.root === node) {
-          this.root = component.el;
-        }
-
         view.on('destroy', function(){
           component.destroy();
         });
@@ -3249,6 +3277,8 @@ module.exports = function(template) {
      */
     View.prototype.mount = function(node, options) {
       options = options || {};
+      View.emit('before mount', this, node, options);
+      this.emit('before mount', node, options);
       var comp = options.compiler || compiler;
       var html = options.template || template;
       if(!this.el) {
