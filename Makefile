@@ -21,9 +21,6 @@ standalone:
 all: build standalone
 
 test: build
-	mocha-phantomjs test/index.html
-
-karma:
 	./node_modules/karma/bin/karma start
 
 .PHONY: clean test karma
