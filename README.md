@@ -21,6 +21,10 @@ person.mount(document.body);
 component install ripplejs/ripple
 ```
 
+```js
+npm install ripplejs/ripple
+```
+
 or download the [standlone version](https://raw.githubusercontent.com/ripplejs/ripple/master/dist/ripple.min.js) and include it on your page.
 
 ## Browser Support
