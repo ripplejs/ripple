@@ -2,7 +2,6 @@ describe('API', function(){
 
   var ripple = require('ripple');
   var assert = require('assert');
-  var dom = require('fastdom');
 
   var View;
 
@@ -14,7 +13,7 @@ describe('API', function(){
 
   it('should add attributes', function (done) {
     View = ripple('<div data-text="foo"></div>');
-    View.directive('data-text', function(view, node, attr, value){
+    View.directive('data-text', function(){
       done();
     });
     var view = new View();

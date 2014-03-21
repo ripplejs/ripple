@@ -1,0 +1,18 @@
+{
+  "eqeqeq": true,
+  "browser": true,
+  "asi": true,
+  "undef": true,
+  "unused": true,
+  "trailing": true,
+  "sub": true,
+  "node": true,
+  "laxbreak": true,
+  "globals": {
+    "console": true,
+    "it": true,
+    "describe": true,
+    "before": true,
+    "after": true
+  }
+}
