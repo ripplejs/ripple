@@ -27,13 +27,6 @@ describe('compiler', function(){
       });
       compiler.render('<div data-test="foo"></div>', view);
     });
-    it('should match directives with a regex', function(done){
-      compiler.directive(/test/, function(view, el, attr, value){
-        assert(value === "foo");
-        done();
-      });
-      compiler.render('<div data-test="foo"></div>', view);
-    });
   });
 
   describe('components', function () {

@@ -18,7 +18,6 @@
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
-    "component/find": "*",
     "ripplejs/accessors": "0.0.3",
     "ripplejs/computed": "0.0.1",
     "ripplejs/interpolate": "0.3.0",
