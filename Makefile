@@ -17,26 +17,26 @@ clean:
 node_modules:
 	npm install
 
-minify: node_modules
+minify: build
 	${MINIFY} build/build.js build/build.min.js
 
-standalone: build
+standalone: node_modules
 	@${COMPONENT} build --standalone ripple --name standalone
 	-rm -r dist
 	mkdir dist
 	cp build/standalone.js dist/ripple.js && rm build/standalone.js
 	@${MINIFY} dist/ripple.js dist/ripple.min.js
 
-karma: node_modules build
+karma: build
 	${KARMA} start
 
 lint: node_modules
 	${JSHINT} lib/**/*.js index.js
 
-test: node_modules lint build
+test: lint build
 	${MOCHA} /test/runner.html
 
-ci: node_modules test karma
+ci: test karma
 
 patch: build standalone
 	${BUMP} patch
