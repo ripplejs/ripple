@@ -36,7 +36,7 @@ lint: node_modules
 test: lint build
 	${MOCHA} /test/runner.html
 
-ci: test karma
+ci: test
 
 patch: build standalone
 	${BUMP} patch
