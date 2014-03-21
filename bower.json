@@ -1,0 +1,17 @@
+{
+  "name": "ripple",
+  "version": "0.2.0",
+  "main": "dist/ripple.js",
+  "description": "Minimal reactive views for building user interfaces",
+  "authors": ["Anthony Short <antshort@gmail.com>"],
+  "license": "MIT",
+  "ignore": [
+    ".*",
+    "lib",
+    "test",
+    "component.json",
+    "package.json",
+    "*.md",
+    "*.js"
+  ]
+}

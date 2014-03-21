@@ -1,7 +1,7 @@
 {
   "name": "ripplejs",
   "version": "0.2.0",
-  "description": "Minimal reactive views",
+  "description": "Minimal reactive views for building user interfaces",
   "main": "dist/ripple.js",
   "directories": {
     "test": "test"
