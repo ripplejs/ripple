@@ -1,8 +1,4 @@
-# ripple ![experimental](http://img.shields.io/badge/stability-experimental-orange.svg) #
-
-**WIP**: This is currently a work-in-progress. The API will probably change a lot. Feel free to suggest ideas for the API in the issues. You can see some working examples over at [ripplejs/examples](https://github.com/ripplejs/examples)
-
----
+# ripple
 
 A tiny foundation for building reactive views with plugins. It aims to have a similar API to Reactive, but allow composition of views, like React.
 
@@ -24,6 +20,8 @@ person.mount(document.body);
 ```js
 component install ripplejs/ripple
 ```
+
+or download the [standlone version](https://raw.githubusercontent.com/ripplejs/ripple/master/dist/ripple.min.js) and include it on your page.
 
 ## Browser Support
 
