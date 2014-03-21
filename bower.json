@@ -11,7 +11,8 @@
     "test",
     "component.json",
     "package.json",
-    "*.md",
-    "*.js"
+    "README.md",
+    "Makefile",
+    "karma.conf.js"
   ]
 }
