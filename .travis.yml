@@ -4,13 +4,13 @@ node_js:
   - 0.10
 
 install:
-  - npm install mocha-phantomjs component
+  - npm install component
 
 before_script:
   - make build
 
 script:
-  - node node_modules/.bin/mocha-phantomjs /test/index.html
+  - make test
 
 notifications:
   email:

@@ -1,8 +1,9 @@
-var ripple = require('ripple');
-var assert = require('assert');
-var dom = require('fastdom');
-
 describe('API', function(){
+
+  var ripple = require('ripple');
+  var assert = require('assert');
+  var dom = require('fastdom');
+
   var View;
 
   it('should create a function that returns an View', function(){

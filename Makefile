@@ -18,8 +18,11 @@ standalone:
 	cp build/standalone.js dist/ripple.js && rm build/standalone.js
 	@minify dist/ripple.js dist/ripple.min.js
 
-test: build
+karma: build
 	./node_modules/karma/bin/karma start
+
+test: build
+	node node_modules/.bin/mocha-phantomjs /test/index.html
 
 patch: build standalone
 	bump patch
