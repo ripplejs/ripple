@@ -3,13 +3,13 @@
   "version": "0.0.7",
   "scripts": [
     "index.js",
-    "lib/view.js",
-    "lib/view-interpolate.js",
-    "lib/view-compiler.js",
-    "lib/compiler.js",
-    "lib/model.js",
-    "lib/model-computed.js",
-    "lib/model-accessors.js"
+    "lib/compiler/index.js",
+    "lib/view/index.js",
+    "lib/view/interpolate.js",
+    "lib/view/compiler.js",
+    "lib/model/index.js",
+    "lib/model/computed.js",
+    "lib/model/accessors.js"
   ],
   "dependencies": {
     "anthonyshort/attributes": "*",

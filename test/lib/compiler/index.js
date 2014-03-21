@@ -1,7 +1,7 @@
 describe('compiler', function(){
 
   var Compiler = require('ripple/lib/compiler');
-  var interpolate = require('ripple/lib/view-interpolate');
+  var interpolate = require('ripple/lib/view/interpolate');
   var createView = require('ripple/lib/view');
   var assert = require('assert');
   var dom = require('fastdom');

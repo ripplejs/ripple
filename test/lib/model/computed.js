@@ -1,7 +1,7 @@
 describe('computed', function(){
   var assert = require('assert');
   var model = require('ripple/lib/model');
-  var computed = require('ripple/lib/model-computed');
+  var computed = require('ripple/lib/model/computed');
 
   var Model, state;
 

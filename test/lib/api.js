@@ -2,7 +2,7 @@ var ripple = require('ripple');
 var assert = require('assert');
 var dom = require('fastdom');
 
-describe('Ripple', function(){
+describe('API', function(){
   var View;
 
   it('should create a function that returns an View', function(){
@@ -19,10 +19,6 @@ describe('Ripple', function(){
     var view = new View();
     view.mount(document.body);
     view.unmount();
-  });
-
-  it.skip('should add components', function (done) {
-
   });
 
 })

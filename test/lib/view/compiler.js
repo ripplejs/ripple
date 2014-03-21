@@ -1,8 +1,8 @@
 describe('view-compiler', function(){
   var assert = require('assert');
   var createView = require('ripple/lib/view');
-  var compiler = require('ripple/lib/view-compiler');
-  var interpolate = require('ripple/lib/view-interpolate');
+  var compiler = require('ripple/lib/view/compiler');
+  var interpolate = require('ripple/lib/view/interpolate');
   var dom = require('fastdom');
 
   var View, One, Two, view;

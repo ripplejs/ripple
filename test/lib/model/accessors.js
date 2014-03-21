@@ -1,7 +1,7 @@
 describe('accessors', function(){
   var assert = require('assert');
   var model = require('ripple/lib/model');
-  var accessors = require('ripple/lib/model-accessors');
+  var accessors = require('ripple/lib/model/accessors');
 
   var Model;
 

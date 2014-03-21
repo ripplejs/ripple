@@ -24,16 +24,6 @@ describe('Model', function(){
     assert( model.get('foo') === 'bar' );
   })
 
-  it('should get multiple properties', function(){
-    model = new Model({
-      'foo' : 'bar',
-      'bar' : 'foo'
-    });
-    var props = model.get(['foo','bar']);
-    assert(props.foo === 'bar');
-    assert(props.bar === 'foo');
-  });
-
   it('should set key and value', function(){
     model = new Model();
     model.set('foo', 'bar');

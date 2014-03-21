@@ -1,7 +1,7 @@
 describe('view-interpolate', function(){
   var assert = require('assert');
   var createView = require('ripple/lib/view');
-  var interpolate = require('ripple/lib/view-interpolate');
+  var interpolate = require('ripple/lib/view/interpolate');
 
   var View;
 
