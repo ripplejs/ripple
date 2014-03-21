@@ -1,0 +1,39 @@
+{
+  "name": "ripplejs",
+  "version": "0.2.0",
+  "description": "Minimal reactive views",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ripplejs/ripple.git"
+  },
+  "keywords": [
+    "view",
+    "reactive",
+    "template",
+    "data-binding",
+    "mvvm",
+    "browser"
+  ],
+  "author": "Anthony Short",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/ripplejs/ripple/issues"
+  },
+  "devDependencies": {
+    "karma": "~0.10.9",
+    "karma-mocha": "~0.1.1",
+    "karma-coverage": "~0.1.4",
+    "karma-script-launcher": "~0.1.0",
+    "karma-phantomjs-launcher": "~0.1.1",
+    "karma-chrome-launcher": "~0.1.2",
+    "karma-firefox-launcher": "~0.1.3",
+    "karma-safari-launcher": "~0.1.1"
+  }
+}
