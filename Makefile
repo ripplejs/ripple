@@ -22,7 +22,7 @@ karma: build
 	./node_modules/karma/bin/karma start
 
 test: build
-	node node_modules/.bin/mocha-phantomjs /test/index.html
+	node node_modules/.bin/mocha-phantomjs /test/runner.html
 
 patch: build standalone
 	bump patch

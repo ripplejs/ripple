@@ -11,7 +11,7 @@ module.exports = function(config) {
     reporters: ['progress'],
     files: [
       'build/build.js',
-      'test/lib/**/*.js'
+      'test/specs/**/*.js'
     ],
     browsers: [
       'Chrome',
