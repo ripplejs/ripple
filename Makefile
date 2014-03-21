@@ -18,9 +18,13 @@ standalone:
 	cp build/standalone.js dist/ripple.js && rm build/standalone.js
 	@minify dist/ripple.js dist/ripple.min.js
 
-all: build standalone
-
 test: build
 	./node_modules/karma/bin/karma start
 
-.PHONY: clean test karma
+patch: build standalone
+	bump patch
+
+release: build standalone
+	bump minor
+
+.PHONY: clean test karma patch release standalone

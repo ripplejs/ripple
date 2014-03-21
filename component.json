@@ -1,6 +1,6 @@
 {
   "name": "ripple",
-  "version": "0.0.7",
+  "version": "0.2.0",
   "scripts": [
     "index.js",
     "lib/compiler/index.js",
@@ -18,10 +18,7 @@
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
-    "ripplejs/accessors": "0.0.3",
-    "ripplejs/computed": "0.0.1",
     "ripplejs/interpolate": "0.3.0",
-    "ripplejs/model": "0.4.1",
     "ripplejs/path-observer": "0.1.2",
     "timoxley/to-array": "0.2.1",
     "wilsonpage/fastdom": "v0.8.4",
