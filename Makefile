@@ -21,7 +21,10 @@ standalone:
 karma: build
 	./node_modules/karma/bin/karma start
 
-test: build
+lint:
+	node node_modules/.bin/jshint lib/**/*.js index.js
+
+test: lint build
 	node node_modules/.bin/mocha-phantomjs /test/runner.html
 
 patch: build standalone
