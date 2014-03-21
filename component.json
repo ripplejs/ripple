@@ -1,8 +1,9 @@
 {
   "name": "ripple",
   "version": "0.2.0",
+  "main": "lib/index.js",
   "scripts": [
-    "index.js",
+    "lib/index.js",
     "lib/compiler/index.js",
     "lib/view/index.js",
     "lib/view/interpolate.js",

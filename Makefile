@@ -5,7 +5,7 @@ MOCHA = ./node_modules/.bin/mocha-phantomjs
 BUMP = ./node_modules/.bin/bump
 MINIFY = ./node_modules/.bin/minify
 
-build: components index.js lib
+build: components lib
 	@${COMPONENT} build --dev
 
 components: node_modules component.json
@@ -31,7 +31,7 @@ karma: build
 	${KARMA} start
 
 lint: node_modules
-	${JSHINT} lib/**/*.js index.js
+	${JSHINT} lib/**/*.js
 
 test: lint build
 	${MOCHA} /test/runner.html

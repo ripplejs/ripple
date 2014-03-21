@@ -2,7 +2,7 @@
   "name": "ripplejs",
   "version": "0.2.0",
   "description": "Minimal reactive views",
-  "main": "index.js",
+  "main": "dist/ripple.js",
   "directories": {
     "test": "test"
   },
