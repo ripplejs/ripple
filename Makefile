@@ -1,36 +1,47 @@
+COMPONENT = ./node_modules/.bin/component
+KARMA = ./node_modules/karma/bin/karma
+JSHINT = ./node_modules/.bin/jshint
+MOCHA = ./node_modules/.bin/mocha-phantomjs
+BUMP = ./node_modules/.bin/bump
+MINIFY = ./node_modules/.bin/minify
 
-build: components index.js
-	@component build --dev
+build: components index.js lib
+	@${COMPONENT} build --dev
 
-components: component.json
-	@component install --dev
+components: node_modules component.json
+	@${COMPONENT} install --dev
 
 clean:
 	rm -fr build components dist
 
-minify:
-	minify build/build.js build/build.min.js
+node_modules:
+	npm install
 
-standalone:
-	@component build --standalone ripple --name standalone
+minify: node_modules
+	${MINIFY} build/build.js build/build.min.js
+
+standalone: build
+	@${COMPONENT} build --standalone ripple --name standalone
 	-rm -r dist
 	mkdir dist
 	cp build/standalone.js dist/ripple.js && rm build/standalone.js
-	@minify dist/ripple.js dist/ripple.min.js
+	@${MINIFY} dist/ripple.js dist/ripple.min.js
 
-karma: build
-	./node_modules/karma/bin/karma start
+karma: node_modules build
+	${KARMA} start
 
-lint:
-	node node_modules/.bin/jshint lib/**/*.js index.js
+lint: node_modules
+	${JSHINT} lib/**/*.js index.js
 
-test: lint build
-	node node_modules/.bin/mocha-phantomjs /test/runner.html
+test: node_modules lint build
+	${MOCHA} /test/runner.html
+
+ci: node_modules test karma
 
 patch: build standalone
-	bump patch
+	${BUMP} patch
 
 release: build standalone
-	bump minor
+	${BUMP} minor
 
 .PHONY: clean test karma patch release standalone

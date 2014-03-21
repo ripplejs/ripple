@@ -6,11 +6,8 @@ node_js:
 install:
   - npm install component
 
-before_script:
-  - make build
-
 script:
-  - make test
+  - make ci
 
 notifications:
   email:
