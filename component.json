@@ -9,7 +9,6 @@
     "lib/view/interpolate.js",
     "lib/view/compiler.js",
     "lib/model/index.js",
-    "lib/model/computed.js",
     "lib/model/accessors.js"
   ],
   "dependencies": {
