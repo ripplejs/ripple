@@ -21,7 +21,7 @@ describe('destroying', function () {
     var view = new View({
       foo: 'bar'
     });
-    view.change('foo', function(){
+    view.watch('foo', function(){
       done(false);
     });
     view.destroy();

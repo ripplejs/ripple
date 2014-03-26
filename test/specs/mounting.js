@@ -64,7 +64,7 @@ describe('mounting', function () {
     view.on('unmounted', function(){
       count += 1;
     });
-    View
+    view
       .mount('body')
       .unmount()
       .unmount();

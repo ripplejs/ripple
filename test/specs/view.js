@@ -9,14 +9,13 @@ describe('View', function(){
     assert(view);
   });
 
-  it('should add attributes', function (done) {
-    View = ripple('<div data-text="foo"></div>');
-    View.directive('data-text', function(){
-      done();
-    });
+  it('should create a view with a selector', function () {
+    var test = document.createElement('div');
+    test.id = 'foo';
+    document.body.appendChild(test);
+    View = ripple('#foo');
     var view = new View();
-    view.mount(document.body);
-    view.unmount();
+    assert(view.template = '<div id="foo"></div>');
   });
 
   it('should construct with properties', function(){
@@ -34,25 +33,6 @@ describe('View', function(){
     assert( view.data.foo === 'baz' );
   });
 
-  it('should watch for changes', function(done){
-    var view = new View();
-    view.set('foo', 'bar');
-    view.watch('foo', function(){
-      done();
-    })
-    view.set('foo', 'baz');
-  })
-
-  it('should unwatch changes', function(done){
-    var view = new View();
-    view.set('foo', 'bar');
-    var id = view.watch('foo', function(){
-      done(false);
-    })
-    view.unwatch(id);
-    view.set('foo', 'baz');
-  })
-
   it('should be able to set default properties', function () {
     View.prototype.getInitialState = function(){
       return {
@@ -65,8 +45,6 @@ describe('View', function(){
     assert(view.data.first === 'Wilma');
     assert(view.data.last === 'Flintstone');
   });
-
-
 
   it('should have a different compiler for each view', function () {
     var One = ripple('<div></div>');
@@ -81,7 +59,5 @@ describe('View', function(){
     var two = new View();
     assert(two.compiler === one.compiler);
   });
-
-
 
 })
