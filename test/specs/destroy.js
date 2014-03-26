@@ -29,11 +29,13 @@ describe('destroying', function () {
     done();
   });
 
-  it('should unmount when destroyed', function () {
+  it('should unmount when destroyed', function (done) {
+    View.on('unmounted', function(){
+      done();
+    });
     view = new View();
-    view.mount(document.body);
+    view.appendTo(document.body);
     view.destroy();
-    assert(view.isMounted() === false);
   });
 
 });

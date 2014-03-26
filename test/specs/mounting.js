@@ -13,8 +13,8 @@ describe('mounting', function () {
       done();
     });
     view = new View();
-    view.mount(document.body);
-    view.unmount();
+    view.appendTo(document.body);
+    view.remove();
   })
 
   it('should mount using a selector', function (done) {
@@ -23,51 +23,49 @@ describe('mounting', function () {
       done();
     });
     view = new View();
-    view.mount('body');
-    view.unmount();
+    view.appendTo('body');
+    view.remove();
   });
 
   it('should unmount', function(){
     view = new View();
-    view.mount(document.body);
+    view.appendTo(document.body);
     var el = view.el;
-    view.unmount();
+    view.remove();
     assert(document.body.contains(el) === false);
   })
 
-  it('should unmount when mounting another element', function () {
+  it('should not unmount when mounting another element', function () {
     var count = 0;
     View.on('unmounted', function(){
       count++;
     });
     view = new View();
-    view.mount('body');
-    view.mount('#mocha');
-    assert(count === 1);
-    view.unmount();
+    view.appendTo('body');
+    view.appendTo('#mocha');
+    assert(count === 0);
+    view.remove();
   });
 
   it('should replace an element', function(){
     var test = document.createElement('div');
     document.body.appendChild(test);
     view = new View();
-    view.mount(test, {
-      replace: true
-    });
+    view.replace(test);
     assert( test.parentNode == null );
-    view.unmount();
+    view.remove();
   });
 
   it('should not unmount if not mounted', function () {
     var count = 0;
-    view = new View();
-    view.on('unmounted', function(){
+    View.on('unmounted', function(){
       count += 1;
     });
+    view = new View();
     view
-      .mount('body')
-      .unmount()
-      .unmount();
+      .appendTo('body')
+      .remove()
+      .remove();
     assert(count === 1);
   });
 });

@@ -1,4 +1,4 @@
-describe.skip('attribute interpolation', function () {
+describe('attribute interpolation', function () {
   var el, View, view;
 
   beforeEach(function () {
@@ -7,11 +7,11 @@ describe.skip('attribute interpolation', function () {
       foo: 'bar',
       hidden: true
     });
-    view.mount(document.body);
+    view.appendTo(document.body);
   });
 
   afterEach(function () {
-    view.unmount();
+    view.remove();
   });
 
   it('should interpolate attributes', function(done){

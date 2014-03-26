@@ -9,17 +9,14 @@ describe('composing views', function () {
     Child = ripple('<div id="{{id}}" color="{{parentcolor}}"></div>');
     Parent = ripple('<child id="test" parentcolor="{{color}}"></child>');
     Parent.compose('child', Child);
-    Parent.prototype.getInitialState = function(){
-      return {
-        color: 'red'
-      };
-    };
-    view = new Parent();
-    view.mount(document.body);
+    view = new Parent({
+      color: red
+    });
+    view.appendTo(document.body);
   });
 
   afterEach(function () {
-    view.unmount();
+    view.remove();
   });
 
   it('should not traverse composed view elements', function () {
@@ -27,8 +24,8 @@ describe('composing views', function () {
     Parent = ripple('<div><child>{{foo}}</child></div>');
     Parent.compose('child', Child);
     var parent = new Parent();
-    parent.mount(document.body);
-    parent.unmount();
+    parent.appendTo(document.body);
+    parent.remove();
   });
 
   it('should pass data to the component', function (done) {
@@ -58,7 +55,7 @@ describe('composing views', function () {
     Parent = ripple('<child>foo</child>');
     Parent.compose('child', Child);
     view = new Parent();
-    view.mount(document.body);
+    view.appendTo(document.body);
     dom.defer(function(){
       assert(view.el.outerHTML === '<div>foo</div>');
       done();
@@ -70,7 +67,7 @@ describe('composing views', function () {
     Parent = ripple('<child></child>');
     Parent.compose('child', Child);
     view = new Parent();
-    view.mount(document.body);
+    view.appendTo(document.body);
     dom.defer(function(){
       assert(view.el.outerHTML === '<div>child</div>');
       done();

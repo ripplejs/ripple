@@ -9,8 +9,8 @@ describe('directives', function () {
       done();
     });
     var view = new View();
-    view.mount('body');
-    view.unmount();
+    view.appendTo('body');
+    view.remove();
   });
 
   it('should not interpolate directive values', function(done){
@@ -22,35 +22,8 @@ describe('directives', function () {
     var view = new View({
       foo: 'bar'
     });
-    view.mount('body');
-    view.unmount();
+    view.appendTo('body');
+    view.remove();
   });
-
-  it('should be able to bind to expressions', function () {
-    var View = ripple('<div data-test="{{foo}}"></div>');
-    View.directive('data-test', function(view, el, value){
-
-      view.on('mounted', function(){
-
-      });
-
-      view.on('unmounted', function(){
-
-      });
-
-      this.interpolate(value, function(){
-
-      });
-
-      assert(value === '{{foo}}');
-      done();
-    });
-    var view = new View({
-      foo: 'bar'
-    });
-    view.mount('body');
-    view.unmount();
-  });
-
 
 });

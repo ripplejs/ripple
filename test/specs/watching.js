@@ -104,13 +104,6 @@ describe('watching', function(){
       assert(called === true);
     })
 
-    it('should emit events', function(done){
-      view.watch(function(val){
-        done();
-      });
-      view.set('foo.bar', 'zab');
-    })
-
     it('should not emit events if the value has not changed', function(){
       var called = 0;
       view.set('foo.bar', 'zab');

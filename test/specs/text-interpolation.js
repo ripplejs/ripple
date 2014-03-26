@@ -1,4 +1,4 @@
-describe.skip('text interpolation', function () {
+describe('text interpolation', function () {
   var assert = require('assert');
   var ripple = require('ripple');
   var dom = require('fastdom');
@@ -9,11 +9,11 @@ describe.skip('text interpolation', function () {
     view = new View({
       text: 'Ted'
     });
-    view.mount('body');
+    view.appendTo('body');
   });
 
   afterEach(function(){
-    view.unmount();
+    view.remove();
   });
 
   it('should interpolate text nodes', function(done){
@@ -74,7 +74,7 @@ describe.skip('text interpolation', function () {
     View = ripple('<div>{{text}}</div>');
     view = new View();
     try {
-      view.mount('body');
+      view.appendTo('body');
     }
     catch(e) {
       done();
