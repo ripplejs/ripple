@@ -28,10 +28,10 @@ standalone: node_modules
 	@${MINIFY} dist/ripple.js dist/ripple.min.js
 
 karma: build
-	${KARMA} start
+	${KARMA} start --auto-watch --no-single-run
 
 lint: node_modules
-	${JSHINT} lib/**/*.js
+	${JSHINT} lib/*.js
 
 test: lint build
 	${MOCHA} /test/runner.html

@@ -4,12 +4,10 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
-    "lib/compiler/index.js",
-    "lib/view/index.js",
-    "lib/view/interpolate.js",
-    "lib/view/compiler.js",
-    "lib/model/index.js",
-    "lib/model/accessors.js"
+    "lib/view.js",
+    "lib/compiler.js",
+    "lib/model.js",
+    "lib/render.js"
   ],
   "dependencies": {
     "anthonyshort/attributes": "*",
@@ -20,7 +18,6 @@
     "component/emitter": "*",
     "ripplejs/interpolate": "0.3.0",
     "ripplejs/path-observer": "0.1.2",
-    "timoxley/to-array": "0.2.1",
     "wilsonpage/fastdom": "v0.8.4",
     "yields/uniq": "*"
   },

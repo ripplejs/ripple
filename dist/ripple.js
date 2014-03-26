@@ -2357,38 +2357,15 @@ module.exports = function (arr, select) {
 });
 require.register("ripple/lib/index.js", function(exports, require, module){
 var view = require('./view');
-var interpolate = require('./view/interpolate');
-var mount = require('./view/compiler');
 
 module.exports = function(template) {
-  return view()
-    .use(interpolate)
-    .use(mount(template));
+  return view(template);
 };
-
 });
-require.register("ripple/lib/compiler/index.js", function(exports, require, module){
-var walk = require('dom-walk');
+require.register("ripple/lib/compiler.js", function(exports, require, module){
 var emitter = require('emitter');
-var isBoolean = require('is-boolean-attribute');
-var dom = require('fastdom');
-var domify = require('domify');
-var each = require('each');
-var attrs = require('attributes');
-
-/**
- * Attach the view to a DocumentFragment
- *
- * @param {View} view
- *
- * @return {DocumentFragment}
- */
-function attachToFragment(el) {
-  var fragment = document.createDocumentFragment();
-  fragment.appendChild(el);
-  return fragment;
-}
-
+var render = require('./render');
+var Interpolator = require('interpolate');
 
 /**
  * The compiler will take a set of views, an element and
@@ -2396,17 +2373,16 @@ function attachToFragment(el) {
  * it finds a node matching a directive it will process it.
  */
 function Compiler(options) {
-  this.components = {};
+  this.views = {};
   this.directives = {};
+  this.interpolator = new Interpolator();
   this.options = options;
 }
-
 
 /**
  * Mixins
  */
 emitter(Compiler.prototype);
-
 
 /**
  * For plugins
@@ -2420,7 +2396,6 @@ Compiler.prototype.use = function(fn) {
   return this;
 };
 
-
 /**
  * Add a component binding. This will be rendered as a separate
  * view and have it's own scope.
@@ -2429,11 +2404,10 @@ Compiler.prototype.use = function(fn) {
  * @param {Function} View
  * @param {Object} options
  */
-Compiler.prototype.component = function(matches, fn) {
-  this.components[matches.toLowerCase()] = fn;
+Compiler.prototype.compose = function(matches, fn) {
+  this.views[matches.toLowerCase()] = fn;
   return this;
 };
-
 
 /**
  * Add an attribute binding. Whenever this attribute is matched
@@ -2457,9 +2431,8 @@ Compiler.prototype.directive = function(matches, fn) {
  * @return {Mixed}
  */
 Compiler.prototype.getComponentBinding = function(el) {
-  return this.components[el.nodeName.toLowerCase()];
+  return this.views[el.nodeName.toLowerCase()];
 };
-
 
 /**
  * Get the attribute binding for an attribute
@@ -2472,142 +2445,90 @@ Compiler.prototype.getAttributeBinding = function(attr) {
   return this.directives[attr];
 };
 
+/**
+ * Add an interpolation filter
+ *
+ * @param {String} name
+ * @param {Function} fn
+ *
+ * @return {Compiler}
+ */
+Compiler.prototype.filter = function(name, fn) {
+  this.interpolator.filter(name, fn);
+  return this;
+};
 
 /**
- * Compile a template into an element and
- * bind it to this view
+ * Set the expression delimiters
+ *
+ * @param {Regex} match
+ *
+ * @return {Compiler}
+ */
+Compiler.prototype.delimiters = function(match) {
+  this.interpolator.delimiters(match);
+  return this;
+};
+
+/**
+ * Check if a filter is available
+ *
+ * @param {String} name
+ *
+ * @return {Boolean}
+ */
+Compiler.prototype.hasFilter = function(name) {
+  return this.interpolator.filters[name] != null;
+};
+
+/**
+ * Render a template and a view
+ *
+ * @param {String} template
+ * @param {View} view
  *
  * @return {Element}
  */
 Compiler.prototype.render = function(template, view) {
-  var self = this;
-  this.view = view;
-  var el = domify(template);
-  var fragment = attachToFragment(el);
-  walk(el, function(node, next){
-    if(node.nodeType === 3) {
-      self.processTextNode(node);
-    }
-    else if(node.nodeType === 1) {
-      self.processNode(node);
-    }
-    next();
-  });
-  return fragment.firstChild;
-};
-
-
-/**
- * Process a text node. Interpolate the text node
- * using the view if possible.
- *
- * @param {View} view
- * @param {Element} node
- *
- * @return {void}
- */
-Compiler.prototype.processTextNode = function(node) {
-  if(this.view.hasInterpolation(node.data) === false) {
-    return;
-  }
-  this.view.interpolate(node.data, function(val){
-    dom.write(function(){
-      if(val && val.nodeType) {
-        node.parentNode.replaceChild(val, node);
-        node = val;
-      }
-      else {
-        var text = document.createTextNode(typeof val === 'string' ? val : '');
-        node.parentNode.replaceChild(text, node);
-        node = text;
-      }
-    });
-  });
-};
-
-
-/**
- * Process a single node on the view. If there is a Component
- * for this element, we'll create that view and replace the
- * placeholder element with that component.
- *
- * @param {View} view
- * @param {Element} node
- *
- * @return {boolean}
- */
-Compiler.prototype.processNode = function(node) {
-  var fn = this.getComponentBinding(node);
-  if(!fn) return this.processAttributes(node);
-  fn.call(this, node, this.view);
-};
-
-
-/**
- * Process the attributes on a node. If there is a binding for
- * an attribute it will run it, otherwise it will try to
- * interpolate the attributes value using the view
- *
- * @param {View} view
- * @param {Element} node
- *
- * @return {void}
- */
-Compiler.prototype.processAttributes = function(node) {
-  var view = this.view;
-  var self = this;
-
-  each(attrs(node), function(attr, value){
-    var binding = self.getAttributeBinding(attr);
-    if(binding) {
-      binding.call(self, view, node, attr, value);
-    }
-    else {
-      self.interpolateAttribute(node, attr, value);
-    }
-  });
-};
-
-
-/**
- * Interpolate an attribute on a node using the view
- *
- * @param {View} view
- * @param {Element} node
- * @param {String} attr
- *
- * @api private
- * @return {void}
- */
-Compiler.prototype.interpolateAttribute = function(node, attr, value) {
-  this.view.interpolate(value, function(val){
-    dom.write(function(){
-      if(isBoolean(attr) && !val) {
-        node.removeAttribute(attr);
-      }
-      else {
-        node.setAttribute(attr, val);
-      }
-    });
-  });
+  return render(this, view, template);
 };
 
 module.exports = Compiler;
 });
-require.register("ripple/lib/view/index.js", function(exports, require, module){
+require.register("ripple/lib/view.js", function(exports, require, module){
 var emitter = require('emitter');
 var toArray = require('to-array');
 var model = require('../model');
-var computed = require('../model/computed');
-var accessors = require('../model/accessors');
 
-function freeze(Model) {
-  Model.on('construct', function(model){
-    Object.freeze(model.props);
-  });
-}
+module.exports = function(template, compiler) {
 
-module.exports = function() {
+  /**
+   * Renders the view
+   *
+   * @type {Compiler}
+   */
+  compiler = compiler || new Compiler();
+
+  /**
+   * The initial state given to the view
+   *
+   * @type {Function}
+   */
+  var initialState;
+
+  /**
+   * Stores the state of the view.
+   *
+   * @type {Function}
+   */
+  var State = model();
+
+  /**
+   * Stores the attributes of the view
+   *
+   * @type {Function}
+   */
+  var Props = model();
 
   /**
    * The view controls the lifecycle of the
@@ -2618,44 +2539,21 @@ module.exports = function() {
    * @param {Object} data
    * @param {Object} options
    */
-  function View(props, options) {
-    options = options || {};
-    View.emit('creating', this, props, options);
-    this.options = options;
-    this.props = new View.Props(props);
-    this.state = new View.State();
-    this.owner = options.owner;
-    this.root = this.owner ? this.owner.root : this;
-    View.emit('created', this, props, options);
+  function View(props) {
+    View.emit('creating', this);
+    this.props = new Props(props);
+    this.state = new State(initialState());
+    this.$compiler = compiler;
+    this.$owner = null;
+    this.$root = this;
+    View.emit('created', this);
   }
-
 
   /**
    * Mixins
    */
   emitter(View);
   emitter(View.prototype);
-
-
-  /**
-   * Stores the state of the view.
-   *
-   * @type {Function}
-   */
-  View.State = model()
-    .use(accessors)
-    .use(computed);
-
-
-  /**
-   * Stores the attributes of the view
-   *
-   * @type {Function}
-   */
-  View.Props = model()
-    .use(accessors)
-    .use(freeze);
-
 
   /**
    * Set the initial state of the view. Accepts
@@ -2667,12 +2565,9 @@ module.exports = function() {
    * @return {View}
    */
   View.initialState = function(fn) {
-    View.on('created', function(){
-      this.state.set(fn.call(this));
-    });
+    initialState = fn;
     return this;
   };
-
 
   /**
    * Fire a function whenever a property
@@ -2684,14 +2579,39 @@ module.exports = function() {
    * @return {View}
    */
   View.change = function(prop, fn) {
-    View.on('created', function(){
+    View.on('created', function(view){
       var change = fn.bind(this);
-      this.props.change(prop, change);
-      change(this.props.get(prop));
+      view.props.change(prop, change);
+      change(view.props[prop]);
     });
     return this;
   };
 
+  /**
+   * Add a directive
+   *
+   * @param {String|Regex} match
+   * @param {Function} fn
+   *
+   * @return {View}
+   */
+  View.directive = function(match, fn) {
+    compiler.directive(match, fn);
+    return this;
+  };
+
+  /**
+   * Add a component
+   *
+   * @param {String} match
+   * @param {Function} fn
+   *
+   * @return {View}
+   */
+  View.compose = function(match, Component) {
+    compiler.component(match, Component);
+    return this;
+  };
 
   /**
    * Use a plugin
@@ -2703,91 +2623,17 @@ module.exports = function() {
     return this;
   };
 
-
   /**
-   * Add a computed state property
+   * Set the owner
+   *
+   * @param {View} newOwner
    *
    * @return {View}
    */
-  View.computed = function(key, deps, fn) {
-    View.State.computed(key, deps, fn);
+  View.prototype.owner = function(newOwner) {
+    this.$owner = newOwner;
+    this.$root = newOwner.root;
     return this;
-  };
-
-
-  /**
-   * When calling View.on the function will
-   * always be called in the context of the view instance
-   *
-   * @return {View}
-   */
-  View.on = function(event, fn) {
-    emitter.prototype.on.call(this, event, function(){
-      var args = toArray(arguments);
-      var view = args.shift();
-      fn.apply(view, args);
-    });
-    return this;
-  };
-
-
-  /**
-   * Lookup a property on this view.
-   *
-   * @param {String} prop
-   */
-  View.prototype.lookup = function(prop) {
-    if(this.state.get(prop) !== undefined) {
-      return this.state;
-    }
-    if(this.props.get(prop) !== undefined) {
-      return this.props;
-    }
-    if(this.owner) {
-      return this.owner.lookup(prop);
-    }
-    return this.state;
-  };
-
-
-  /**
-   * Get the value of a property on the view. If the
-   * value is undefined it checks the owner view recursively
-   * up to the root.
-   *
-   * @param  {String} key
-   *
-   * @return {Mixed}
-   */
-  View.prototype.get = function(key) {
-    return this.lookup(key).get(key);
-  };
-
-
-  /**
-   * Set the value of a property on the view
-   *
-   * @param  {String} key
-   * @param  {Mixed}  value
-   *
-   * @return {void}
-   */
-  View.prototype.set = function(key, value) {
-    this.state.set(key, value);
-  };
-
-  /**
-   * Watch for a state change
-   *
-   * @param  {String|Array} key
-   * @param  {Function} fn
-   *
-   * @return {Function} unbinder
-   */
-  View.prototype.change = function(key, fn) {
-    var binding = this.lookup(key).change(key, fn);
-    this.once('destroyed', binding);
-    return binding;
   };
 
   /**
@@ -2796,257 +2642,97 @@ module.exports = function() {
    * @return {View}
    */
   View.prototype.destroy = function() {
-    View.emit('destroyed', this);
-    this.emit('destroyed');
+    View.emit('destroy', this);
+    this.emit('destroy');
+    this.unmount();
+    this.props.destroy();
+    this.state.destroy();
     this.off();
   };
 
-  return View;
-};
-
-});
-require.register("ripple/lib/view/interpolate.js", function(exports, require, module){
-var Interpolator = require('interpolate');
-
-module.exports = function(View){
-
   /**
-   * Interpolation engine
+   * Is the view mounted in the DOM
    *
-   * @type {Interpolator}
+   * @return {Boolean}
    */
-  var interpolator = new Interpolator();
+  View.prototype.isMounted = function(){
+    return this.el != null && this.el.parentNode;
+  };
 
   /**
-   * Add an interpolation filter
+   * Set the state of the view
+   */
+  View.prototype.setState = function(name, value){
+    this.state.set(name, value);
+  };
+
+  /**
+   * Set the props of the view
+   */
+  View.prototype.setProps = function(name, value){
+    this.props.set(name, value);
+  };
+
+  /**
+   * Listen for a change event on props or state.
+   * It will be cleaned up when the view is destroyed
    *
-   * @param {String} name
+   * @param {String} type props or state
+   * @param {String} attr
    * @param {Function} fn
+   */
+  View.prototype.change = function(type, attr, fn) {
+    var change = this[type].change(attr, fn);
+    this.on('destroy', change);
+  };
+
+  /**
+   * Append this view to an element
+   *
+   * @param {Element} node
    *
    * @return {View}
    */
-  View.filter = function(name, fn) {
-    interpolator.filter(name, fn);
+  View.prototype.mount = function(node, options) {
+    if(this.isMounted() === true) {
+      return this;
+    }
+    options = options || {};
+    View.emit('mounting', this, node, options);
+    this.emit('mounting', node, options);
+    if(!this.el) {
+      this.el = this.compiler.render(template, this);
+    }
+    if(options.replace) {
+      node.parentNode.replaceChild(this.el, node);
+    }
+    else {
+      node.appendChild(this.el);
+    }
+    View.emit('mounted', this, node, options);
+    this.emit('mounted', node, options);
     return this;
   };
 
   /**
-   * Set the expression delimiters
-   *
-   * @param {Regex} match
+   * Remove the element from the DOM
    *
    * @return {View}
    */
-  View.delimiters = function(match) {
-    interpolator.delimiters(match);
+  View.prototype.unmount = function() {
+    if(this.isMounted() === false) return this;
+    View.emit('unmounting', this);
+    this.emit('unmounting');
+    this.el.parentNode.removeChild(this.el);
+    this.el = null;
+    View.emit('unmounted', this);
+    this.emit('unmounted');
     return this;
   };
 
-  /**
-   * Check if a filter is available
-   *
-   * @param {String} name
-   *
-   * @return {Boolean}
-   */
-  View.prototype.hasFilter = function(name) {
-    return interpolator.filters[name] != null;
-  };
-
-  /**
-   * Check if a string has expressions
-   *
-   * @param {String} str
-   *
-   * @return {Boolean}
-   */
-  View.prototype.hasInterpolation = function(str) {
-    return interpolator.has(str);
-  };
-
-  /**
-   * Interpolate a string using the views props and state.
-   * Takes a callback that will be fired whenever the
-   * attributes used in the string change.
-   *
-   * @param {String} str
-   * @param {Function} callback
-   *
-   * @return {void}
-   */
-  View.prototype.interpolate = function(str, callback) {
-    var self = this;
-
-    // If the string has no expressions, we can just return
-    // the string one, since it never needs to change.
-    if(this.hasInterpolation(str) === false) {
-      return callback ? callback(str) : str;
-    }
-
-    // Get all of the properties used withing the string
-    // in all expressions it can find
-    var attrs = interpolator.props(str);
-
-    function render() {
-      var data = {};
-      attrs.forEach(function(attr){
-        var value = self.get(attr);
-        if(value === undefined) {
-          throw new Error('Can\'t find interpolation property named "' + attr + '"');
-        }
-        data[attr] = value;
-      });
-      return interpolator.value(str, data);
-    }
-
-    if(callback) {
-      // Whenever any of the properties used in the
-      // expression changes, we render it again
-      attrs.map(function(attr){
-        return self.change(attr, function(){
-          callback(render());
-        });
-      });
-      // Immediately render the string
-      callback(render());
-      return;
-    }
-
-    return render();
-  };
-
 };
 });
-require.register("ripple/lib/view/compiler.js", function(exports, require, module){
-var Compiler = require('../compiler');
-var each = require('each');
-var attrs = require('attributes');
-
-module.exports = function(template) {
-
-  /**
-   * Return a plugin
-   *
-   * @param {View} View
-   */
-  return function(View) {
-
-    /**
-     * Compiler that renders binds the view to
-     * the DOM and manages the bindings
-     *
-     * @type {Compiler}
-     */
-    var compiler = new Compiler();
-
-    /**
-     * Set the compiler on the view when it
-     * is created. This means the instances will
-     * have a reference to the compiler
-     */
-    View.on('created', function(){
-      this.compiler = compiler;
-    });
-
-    /**
-     * Unmount when the view is destroyed
-     */
-    View.on('destroyed', function(){
-      this.unmount();
-    });
-
-    /**
-     * Add a component
-     *
-     * @param {String} match
-     * @param {Function} fn
-     *
-     * @return {View}
-     */
-    View.compose = function(match, Component) {
-      compiler.component(match, function(node, view){
-
-        var component = new Component();
-
-        each(attrs(node), function(name, value){
-          view.interpolate(value, function(val){
-            component.props.set(name, val);
-          });
-        });
-
-        component.mount(node, {
-          replace: true,
-          template: (node.innerHTML !== '') ? node.innerHTML : null
-        });
-
-        view.on('destroyed', function(){
-          component.destroy();
-        });
-
-      });
-      return this;
-    };
-
-    /**
-     * Add a directive
-     *
-     * @param {String|Regex} match
-     * @param {Function} fn
-     *
-     * @return {View}
-     */
-    View.directive = function(match, fn) {
-      compiler.directive(match, fn);
-      return this;
-    };
-
-    /**
-     * Append this view to an element
-     *
-     * @param {Element} node
-     *
-     * @return {View}
-     */
-    View.prototype.mount = function(node, options) {
-      options = options || {};
-      View.emit('mounting', this, node, options);
-      this.emit('mounting', node, options);
-      var comp = options.compiler || compiler;
-      var html = options.template || template;
-      if(!this.el) {
-        this.el = comp.render(html, this);
-      }
-      if(options.replace) {
-        node.parentNode.replaceChild(this.el, node);
-      }
-      else {
-        node.appendChild(this.el);
-      }
-      View.emit('mounted', this, node, options);
-      this.emit('mounted', node, options);
-      return this;
-    };
-
-    /**
-     * Remove the element from the DOM
-     *
-     * @return {View}
-     */
-    View.prototype.unmount = function() {
-      if(!this.el || !this.el.parentNode) return this;
-      View.emit('unmounting', this);
-      this.emit('unmounting');
-      this.el.parentNode.removeChild(this.el);
-      this.el = null;
-      View.emit('unmounted', this);
-      this.emit('unmounted');
-      return this;
-    };
-
-  };
-};
-});
-require.register("ripple/lib/model/index.js", function(exports, require, module){
+require.register("ripple/lib/model.js", function(exports, require, module){
 var observer = require('path-observer');
 var emitter = require('emitter');
 
@@ -3066,6 +2752,7 @@ module.exports = function(){
     if(!(this instanceof Model)) return new Model(props);
     this.props = props || {};
     this.observer = observer(this.props);
+    this.updateAccessors();
     Model.emit('construct', this);
   }
 
@@ -3136,100 +2823,15 @@ module.exports = function(){
     return this.observer(keypath).get();
   };
 
-  return Model;
-};
-});
-require.register("ripple/lib/model/computed.js", function(exports, require, module){
-module.exports = function(Model) {
-
   /**
-   * Stores dependencies being tracked
-   */
-  var tracking;
-
-
-  /**
-   * Store the previous get method. We'll
-   * override it so we can track the dependencies
-   *
-   * @type {Function}
-   */
-  var get = Model.prototype.get;
-
-
-  /**
-   * Start tracking calls to .get
-   *
-   * @return {Array}
-   */
-  function track(){
-    tracking = [];
-    return tracking;
-  }
-
-
-  /**
-   * Stop tracking calls to .get
-   *
-   * @return {void}
-   */
-  function stopTracking(){
-    tracking = null;
-  }
-
-
-  /**
-   * Set an attribute to be computed and automatically
-   * update when other keys are updated
-   *
-   * @param {String} key
-   * @param {Array} dependencies
-   * @param {Function} fn
+   * Destroy all observers
    *
    * @return {Model}
    */
-  Model.computed = function(name, dependencies, fn) {
-    var args = arguments;
-    Model.on('construct', function(self){
-      var update;
-      if(args.length === 2) {
-        fn = args[1];
-        dependencies = track();
-        fn.call(self);
-        stopTracking();
-        update = function() {
-          self.set(name, fn.call(self));
-        };
-      }
-      else {
-        update = function() {
-          var values = dependencies.map(self.get.bind(self));
-          self.set(name, fn.apply(self, values));
-        };
-      }
-      self.change(dependencies, update);
-      update();
-    });
+  Model.prototype.destroy = function(){
+    this.observer.destroy();
     return this;
   };
-
-
-  /**
-   * Override the get method to track dependecies
-   * so we can guess what the computed property needs.
-   *
-   * @param {String} prop
-   */
-  Model.prototype.get = function(prop){
-    if(tracking) tracking.push(prop);
-    return get.apply(this, arguments);
-  };
-
-}
-});
-require.register("ripple/lib/model/accessors.js", function(exports, require, module){
-module.exports = function(Model) {
-  var set = Model.prototype.set;
 
   /**
    * Add a single accessor for a property.
@@ -3259,28 +2861,162 @@ module.exports = function(Model) {
     return this;
   };
 
-  /**
-   * Whenever a property is set, it should
-   * add an accessor for that property.
-   */
-  Model.prototype.set = function(prop){
-    if(typeof prop === 'string') {
-      this.addAccessor(prop);
-    }
-    else {
-      for(var key in prop) this.addAccessor(key);
-    }
-    return set.apply(this, arguments);
-  };
+  return Model;
+};
+});
+require.register("ripple/lib/render.js", function(exports, require, module){
+var walk = require('dom-walk');
+var dom = require('fastdom');
+var each = require('each');
+var attrs = require('attributes');
+var isBoolean = require('is-boolean-attribute');
+var domify = require('domify');
 
-  /**
-   * When the model is created we need
-   * to create accessors for all properties
-   */
-  Model.on('construct', function(model){
-    model.updateAccessors();
+module.exports = function(compiler, template, view) {
+  var el = domify(template);
+  var fragment = document.createDocumentFragment();
+  fragment.appendChild(el);
+
+  walk(el, function(node, next){
+    if(node.nodeType === 3) {
+      return textBinding(node);
+    }
+    if(node.nodeType === 1) {
+      var fn = compiler.getComponentBinding(node);
+      if(!fn) return attributeBinding(node);
+      componentBinding(node, fn);
+    }
+    next();
   });
 
+   /**
+   * Process the attributes on a node. If there is a binding for
+   * an attribute it will run it, otherwise it will try to
+   * interpolate the attributes value using the view
+   *
+   * @param {View} view
+   * @param {Element} node
+   *
+   * @return {void}
+   */
+  function attributeBinding(node) {
+    each(attrs(node), function(attr, value){
+      var binding = compiler.getAttributeBinding(attr);
+      if(binding) {
+        binding.call(compiler, view, node, attr, value);
+      }
+      else {
+        attributeTextBinding(node, attr, value);
+      }
+    });
+  }
+
+  /**
+   * Interpolate an attribute on a node using the view
+   *
+   * @param {View} view
+   * @param {Element} node
+   * @param {String} attr
+   *
+   * @api private
+   * @return {void}
+   */
+  function attributeTextBinding(node, attr, value) {
+    interpolate(value, function(val){
+      dom.write(function(){
+        if(isBoolean(attr) && !val) {
+          node.removeAttribute(attr);
+        }
+        else {
+          node.setAttribute(attr, val);
+        }
+      });
+    })
+  }
+
+  /**
+   * Process a text node. Interpolate the text node
+   * using the view if possible.
+   *
+   * @param {View} view
+   * @param {Element} node
+   *
+   * @return {void}
+   */
+  function textBinding(node) {
+    interpolate(node.data, function(val){
+      dom.write(function(){
+        if(val && val.nodeType) {
+          node.parentNode.replaceChild(val, node);
+          node = val;
+        }
+        else {
+          var text = document.createTextNode(typeof val === 'string' ? val : '');
+          node.parentNode.replaceChild(text, node);
+          node = text;
+        }
+      });
+    });
+  }
+
+  /**
+   * Compose another view
+   *
+   * @param {Element} node
+   * @param {View} Component
+   *
+   * @return {void}
+   */
+  function componentBinding(node, Component) {
+    var component = new Component();
+
+    each(attrs(node), function(name, value){
+      interpolate(value, function(val){
+        component.props.set(name, val);
+      });
+    });
+
+    component.mount(node, {
+      replace: true,
+      template: (node.innerHTML !== '') ? node.innerHTML : null
+    });
+
+    view.on('destroyed', function(){
+      component.destroy();
+    });
+  }
+
+  /**
+   * Interpolate a string using the views props and state.
+   * Takes a callback that will be fired whenever the
+   * attributes used in the string change.
+   *
+   * @param {String} str
+   * @param {Function} callback
+   *
+   * @return {void}
+   */
+  function interpolate(str, callback) {
+    var interpolator = compiler.interpolator;
+
+    if(interpolator.has(str) === false) {
+      return;
+    }
+
+    function update() {
+      callback(interpolator.value(str, null, view));
+    }
+
+    var match;
+    var re = /this\.(state|props)\.([a-zA-Z_$]+)/g;
+    while(match = re.exec(str)) {
+      view.change(match[1], match[2], update);
+    }
+
+    update();
+  }
+
+  return fragment.firstChild;
 };
 });
 
