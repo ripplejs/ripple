@@ -20,7 +20,7 @@ describe('View', function(){
 
   it('should construct with properties', function(){
     var view = new View({
-      state: {
+      data: {
         foo: 'bar'
       }
     });
@@ -29,14 +29,16 @@ describe('View', function(){
 
   it('should set values', function () {
     var view = new View({
-      foo: 'bar'
+      data: {
+        foo: 'bar'
+      }
     });
     view.set('foo', 'baz');
     assert( view.data.foo === 'baz' );
   });
 
   it('should be able to set default properties', function () {
-    View.prototype.getInitialState = function(){
+    View.prototype.initialize = function(options){
       return {
         first: 'Fred',
         last: 'Flintstone'
@@ -48,7 +50,7 @@ describe('View', function(){
     assert(view.data.last === 'Flintstone');
   });
 
-  it.skip('should have a different compiler for each view', function () {
+  it('should have a different compiler for each view', function () {
     var One = ripple('<div></div>');
     var Two = ripple('<div></div>');
     var one = new One();

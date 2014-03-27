@@ -8,7 +8,9 @@ describe('model', function(){
   });
 
   it('should set properties in the constructor', function(){
-    view = new View({ 'foo' : 'bar' });
+    view = new View({
+      data: {'foo' : 'bar' }
+    });
     assert( view.get('foo') === 'bar' );
     assert( view.data.foo === 'bar' );
   })
@@ -50,7 +52,11 @@ describe('model', function(){
   });
 
   it('should set properties in constructor', function(){
-    var obj = new View({ 'foo':'bar' });
+    var obj = new View({
+      data: {
+        'foo':'bar'
+      }
+    });
     assert( obj.get('foo') === 'bar' );
   });
 

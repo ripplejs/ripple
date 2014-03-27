@@ -7,7 +7,9 @@ describe('text interpolation', function () {
   beforeEach(function () {
     View = ripple('<div>{{text}}</div>');
     view = new View({
-      text: 'Ted'
+      data: {
+        text: 'Ted'
+      }
     });
     view.appendTo('body');
   });
@@ -18,20 +20,48 @@ describe('text interpolation', function () {
 
   it('should interpolate text nodes', function(done){
     dom.defer(function(){
-      assert(el.innerHTML === 'Ted');
+      assert(view.el.innerHTML === 'Ted');
       done();
     });
   })
 
-  it('should batch text node interpolation', function(){
+  it('should remove the binding when the view is destroyed', function(done){
+    var el = view.el;
+    dom.defer(function(){
+      view.destroy();
+      view.set('text', 'Barney');
+      dom.defer(function(){
+        assert(el.innerHTML === "Ted");
+        done();
+      });
+    });
+  });
+
+  it('should batch text node interpolation', function(done){
+    var count = 0;
     var view = new View();
-    assert(el.innerHTML !== 'Ted');
+    var previous = view.interpolate;
+
+    view.interpolate = function(){
+      count++;
+      return previous.apply(this, arguments);
+    };
+
+    view.set('text', 'one');
+    view.set('text', 'two');
+    view.set('text', 'three');
+
+    dom.defer(function(){
+      assert(count === 1);
+      assert(view.el.innerHTML === 'three');
+      done();
+    });
   })
 
   it('should update interpolated text nodes', function(done){
     view.set('text', 'Fred');
     dom.defer(function(){
-      assert(el.innerHTML === 'Fred');
+      assert(view.el.innerHTML === 'Fred');
       done();
     });
   })
@@ -40,7 +70,7 @@ describe('text interpolation', function () {
     var test = document.createElement('div');
     view.set('text', test);
     dom.defer(function(){
-      assert(el.firstChild === test);
+      assert(view.el.firstChild === test);
       done();
     });
   })
@@ -52,7 +82,7 @@ describe('text interpolation', function () {
     dom.defer(function(){
       view.set('text', test2);
       dom.defer(function(){
-        assert(el.firstChild === test2);
+        assert(view.el.firstChild === test2);
         done();
       });
     });
@@ -64,21 +94,10 @@ describe('text interpolation', function () {
     dom.defer(function(){
       view.set('text', 'bar');
       dom.defer(function(){
-        assert(el.innerHTML === 'bar');
+        assert(view.el.innerHTML === 'bar');
         done();
       });
     });
-  });
-
-  it('should throw errors for undefined variables', function(done){
-    View = ripple('<div>{{text}}</div>');
-    view = new View();
-    try {
-      view.appendTo('body');
-    }
-    catch(e) {
-      done();
-    }
   });
 
   it('should update from an non-string value', function(done){
@@ -86,7 +105,7 @@ describe('text interpolation', function () {
     dom.defer(function(){
       view.set('text', 'bar');
       dom.defer(function(){
-        assert(el.innerHTML === 'bar');
+        assert(view.el.innerHTML === 'bar');
         done();
       });
     });
@@ -95,7 +114,7 @@ describe('text interpolation', function () {
   describe('rendering empty strings', function () {
     afterEach(function (done) {
       dom.defer(function(){
-        assert(el.innerHTML === '');
+        assert(view.el.innerHTML === '');
         done();
       });
     });
@@ -109,4 +128,5 @@ describe('text interpolation', function () {
       view.set('text', true);
     });
   });
+
 });

@@ -1,12 +1,18 @@
 describe('attribute interpolation', function () {
-  var el, View, view;
+  var assert = require('assert');
+  var ripple = require('ripple');
+  var dom = require('fastdom');
+  var View, view, el;
 
   beforeEach(function () {
     View = ripple('<div id="{{foo}}" hidden="{{hidden}}"></div>');
     view = new View({
-      foo: 'bar',
-      hidden: true
+      data: {
+        foo: 'bar',
+        hidden: true
+      }
     });
+    el = view.el;
     view.appendTo(document.body);
   });
 

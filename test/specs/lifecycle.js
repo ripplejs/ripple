@@ -6,21 +6,37 @@ describe('lifecycle events', function () {
     View = ripple('<div></div>');
   });
 
-  it('created', function (done) {
+  it('should fire a created ecent', function (done) {
     View.on('created', function(){
       done();
     });
     new View();
   });
 
-  it('creating', function (done) {
-    View.on('creating', function(){
+  it('should have a created method', function (done) {
+    View.created(function(){
+      assert( this instanceof View );
       done();
     });
     new View();
   });
 
-  it('mounted', function (done) {
+  it('should fire a ready event', function (done) {
+    View.on('ready', function(){
+      done();
+    });
+    new View();
+  });
+
+  it('should have a ready method', function (done) {
+    View.ready(function(){
+      assert( this instanceof View );
+      done();
+    });
+    new View();
+  });
+
+  it('should fire a mounted event', function (done) {
     View.on('mounted', function(){
       done();
     });
@@ -29,7 +45,17 @@ describe('lifecycle events', function () {
       .remove();
   });
 
-  it('unmounted', function (done) {
+  it('should have a mounted method', function (done) {
+    View.mounted(function(){
+      assert( this instanceof View );
+      done();
+    });
+    new View()
+      .appendTo(document.body)
+      .remove();
+  });
+
+  it('should fire an unmounted event', function (done) {
     View.on('unmounted', function(){
       done();
     });
@@ -38,12 +64,31 @@ describe('lifecycle events', function () {
       .remove();
   });
 
-  it('destroyed', function (done) {
-    View.on('destroyed', function(){
+  it('should have an unmounted method', function (done) {
+    View.unmounted(function(){
+      assert( this instanceof View );
+      done();
+    });
+    new View()
+      .appendTo(document.body)
+      .remove();
+  });
+
+  it('should fire a destroy event', function (done) {
+    View.on('destroy', function(){
       done();
     });
     new View()
       .destroy()
+  });
+
+  it('should have an destroy method', function (done) {
+    View.destroy(function(){
+      assert( this instanceof View );
+      done();
+    });
+    new View()
+      .destroy();
   });
 
 });
