@@ -8,6 +8,7 @@
     "lib/compiler.js",
     "lib/model.js",
     "lib/render.js",
+    "lib/directive.js",
     "lib/text-binding.js",
     "lib/attr-binding.js",
     "lib/child-binding.js"
