@@ -39,14 +39,13 @@ describe('directives', function () {
     });
   });
 
-  it('should call the binding in the context of the directive', function () {
-    var view;
+  it('should call the binding in the context of the directive', function (done) {
     var View = ripple('<div data-test="foo"></div>');
     View.directive('data-test', function(value){
-      assert(this.node === view.el);
-      assert(this.view === view);
+      assert(this.constructor.name === 'Directive');
+      done();
     });
-    view = new View();
+    var view = new View();
   });
 
 });
