@@ -5,7 +5,7 @@ MOCHA = ./node_modules/.bin/mocha-phantomjs
 BUMP = ./node_modules/.bin/bump
 MINIFY = ./node_modules/.bin/minify
 
-build: components lib
+build: components $(find lib/*.js)
 	@${COMPONENT} build --dev
 
 components: node_modules component.json
@@ -28,7 +28,7 @@ standalone: node_modules
 	@${MINIFY} dist/ripple.js dist/ripple.min.js
 
 karma: build
-	${KARMA} start --auto-watch --no-single-run
+	${KARMA} start --no-auto-watch --single-run
 
 lint: node_modules
 	${JSHINT} lib/*.js

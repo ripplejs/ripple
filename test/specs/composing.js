@@ -22,7 +22,7 @@ describe('composing views', function () {
   });
 
   it('should not traverse composed view elements', function () {
-    Child = ripple('<div id="{{id}}" color="{{parentcolor}}"></div>');
+    Child = ripple('<div></div>');
     Parent = ripple('<div><child>{{foo}}</child></div>');
     Parent.compose('child', Child);
     var parent = new Parent();
@@ -30,18 +30,12 @@ describe('composing views', function () {
     parent.remove();
   });
 
-  it('should pass data to the component', function (done) {
-    dom.defer(function(){
-      assert(view.el.id === "test", view.el.id);
-      done();
-    });
+  it('should pass data to the component', function () {
+    assert(view.el.id === "test", view.el.id);
   });
 
-  it('should pass data as an expression to the component', function (done) {
-    dom.defer(function(){
-      assert(view.el.getAttribute('color') === "red");
-      done();
-    });
+  it('should pass data as an expression to the component', function () {
+    assert(view.el.getAttribute('color') === "red");
   });
 
   it('should update data passed to the component', function (done) {
@@ -53,13 +47,14 @@ describe('composing views', function () {
   });
 
   it('should use custom content', function (done) {
-    Child = ripple('<div>{{$content}}</div>');
-    Parent = ripple('<child>foo</child>');
+    var Child = ripple('<div>{{yield}}</div>');
+    var Parent = ripple('<child>foo</child>');
     Parent.compose('child', Child);
-    view = new Parent();
+    var view = new Parent();
     view.appendTo(document.body);
     dom.defer(function(){
       assert(view.el.outerHTML === '<div>foo</div>');
+      view.remove();
       done();
     });
   });

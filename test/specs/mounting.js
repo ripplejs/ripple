@@ -36,13 +36,15 @@ describe('mounting', function () {
   })
 
   it('should not unmount when mounting another element', function () {
+    var test = document.createElement('div');
+    document.body.appendChild(test);
     var count = 0;
     View.on('unmounted', function(){
       count++;
     });
     view = new View();
     view.appendTo('body');
-    view.appendTo('#mocha');
+    view.appendTo(test);
     assert(count === 0);
     view.remove();
   });

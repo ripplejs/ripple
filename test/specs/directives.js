@@ -49,8 +49,4 @@ describe('directives', function () {
     view = new View();
   });
 
-  it.skip('should not run job if the view is destroyed', function(){
-
-  });
-
 });

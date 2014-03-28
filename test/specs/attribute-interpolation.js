@@ -27,19 +27,21 @@ describe('attribute interpolation', function () {
     });
   })
 
-  it('should update interpolated attributes', function(){
+  it('should update interpolated attributes', function(done){
     view.set('foo', 'baz');
     dom.defer(function(){
       assert(el.id === 'baz');
+      done();
     });
   })
 
-  it('should toggle boolean attributes', function(){
+  it('should toggle boolean attributes', function(done){
     dom.defer(function(){
-      assert(el.hasAttribute('hidden'));
+      assert(view.el.hasAttribute('hidden'));
       view.set('hidden', false);
       dom.defer(function(){
-        assert(el.hasAttribute('hidden') === false);
+        assert(view.el.hasAttribute('hidden') === false);
+        done();
       });
     });
   })

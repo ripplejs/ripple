@@ -50,18 +50,18 @@ describe('View', function(){
     assert(view.data.last === 'Flintstone');
   });
 
-  it('should have a different compiler for each view', function () {
+  it('should have different bindings for each view', function () {
     var One = ripple('<div></div>');
     var Two = ripple('<div></div>');
     var one = new One();
     var two = new Two();
-    assert(one.compiler !== two.compiler);
+    assert(one.bindings !== two.bindings);
   });
 
-  it('should have the same compiler for each instance', function () {
+  it('should have the same bindings for each instance', function () {
     var one = new View();
     var two = new View();
-    assert(two.compiler === one.compiler);
+    assert(two.bindings === one.bindings);
   });
 
 })
