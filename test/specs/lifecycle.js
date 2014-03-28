@@ -6,7 +6,25 @@ describe('lifecycle events', function () {
     View = ripple('<div></div>');
   });
 
-  it('should fire a created ecent', function (done) {
+  it('should fire a construct event', function (done) {
+    View.on('construct', function(){
+      done();
+    });
+    new View();
+  });
+
+  it('should have a construct method', function (done) {
+    View.construct(function(options){
+      assert(options.foo === 'bar');
+      assert( this instanceof View );
+      done();
+    });
+    new View({
+      foo: 'bar'
+    });
+  });
+
+  it('should fire a created event', function (done) {
     View.on('created', function(){
       done();
     });
