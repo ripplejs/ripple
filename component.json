@@ -20,7 +20,7 @@
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
-    "ripplejs/interpolate": "0.4.0",
+    "ripplejs/interpolate": "0.4.1",
     "ripplejs/path-observer": "0.1.2",
     "wilsonpage/fastdom": "v0.8.4",
     "yields/uniq": "*"
