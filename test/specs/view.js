@@ -38,12 +38,12 @@ describe('View', function(){
   });
 
   it('should be able to set default properties', function () {
-    View.prototype.initialize = function(options){
+    View.initialize(function(options){
       return {
         first: 'Fred',
         last: 'Flintstone'
       };
-    };
+    });
     var view = new View();
     view.set('first', 'Wilma');
     assert(view.data.first === 'Wilma');
