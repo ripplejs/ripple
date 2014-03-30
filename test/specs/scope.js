@@ -178,4 +178,13 @@ describe('scope', function(){
     assert( child.interpolate('{{foo}}') === 'bar' );
   });
 
+  it('should run interpolation in the parent scope', function () {
+    var parent = new View();
+    parent.set('foo', 'bar');
+    var child = new View({
+      scope: parent
+    });
+    assert( child.interpolate('{{this}}') === parent );
+  });
+
 })
