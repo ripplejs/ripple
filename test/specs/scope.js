@@ -151,7 +151,7 @@ describe('scope', function(){
     var child = new View({
       scope: parent
     });
-    child.watch('foo', function(value){});
+    child.watch('foo', function(){});
     child.set('foo', 'raz');
     assert(child.scopeWatchers['foo'] === undefined);
   });
@@ -167,6 +167,15 @@ describe('scope', function(){
     });
     child.destroy();
     parent.set('foo', 'baz');
+  });
+
+  it.only('should interpolate with properties from the parent scope', function () {
+    var parent = new View();
+    parent.set('foo', 'bar');
+    var child = new View({
+      scope: parent
+    });
+    assert( child.interpolate('{{foo}}') === 'bar' );
   });
 
 })
