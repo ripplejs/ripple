@@ -107,7 +107,7 @@ Each view has a lifecycle. In order:
 * ready
 * mounted
 * unmounted
-* destroyed
+* destroy
 
 When a view is first created, and before anything has been done, it will fire the construct event.
 After the view has been setup, but not rendered, it fires the created event. When it has finally

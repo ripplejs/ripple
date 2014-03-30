@@ -24,4 +24,16 @@ describe('interpolation', function(){
     assert(val[0] === 'Fred');
   });
 
+  it('should interpolate properties with a $', function () {
+    view.set('$value', 'Fred');
+    var val = view.interpolate('{{$value}}');
+    assert(val === 'Fred');
+  });
+
+  it('should not interpolate properties named this', function () {
+    view.set('this', 'Fred');
+    var val = view.interpolate('{{this}}');
+    assert(val === view);
+  });
+
 });
