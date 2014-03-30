@@ -169,7 +169,7 @@ describe('scope', function(){
     parent.set('foo', 'baz');
   });
 
-  it.only('should interpolate with properties from the parent scope', function () {
+  it('should interpolate with properties from the parent scope', function () {
     var parent = new View();
     parent.set('foo', 'bar');
     var child = new View({
