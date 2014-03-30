@@ -17,6 +17,21 @@ describe('interpolation', function(){
     assert( view.interpolate('{{foo | caps}}') === "BAR");
   });
 
+  it('should add filters as objects', function () {
+    var View = ripple('<div></div>');
+    View.filter({
+      caps: function(val){
+        return val.toUpperCase();
+      },
+      lower: function(val){
+        return val.toLowerCase();
+      }
+    });
+    view = new View();
+    view.set('foo', 'bar');
+    assert( view.interpolate('{{foo | caps | lower}}') === "bar");
+  });
+
   it('should return the raw value for simple expressions', function(){
     view.set('names', ['Fred']);
     var val = view.interpolate('{{names}}');
