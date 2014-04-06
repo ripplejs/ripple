@@ -17,7 +17,7 @@ describe('attribute interpolation', function () {
   });
 
   afterEach(function () {
-    view.remove();
+    view.destroy();
   });
 
   it('should interpolate attributes', function(done){
@@ -26,6 +26,16 @@ describe('attribute interpolation', function () {
       done();
     });
   })
+
+  it('should render initial values immediately', function () {
+    assert(el.id === 'bar');
+  });
+
+  it('should not render undefined', function () {
+    var View = ripple('<div id="{{foo}}"></div>');
+    var view = new View();
+    assert(view.el.id === "");
+  });
 
   it('should update interpolated attributes', function(done){
     view.set('foo', 'baz');

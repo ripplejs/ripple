@@ -25,6 +25,16 @@ describe('text interpolation', function () {
     });
   })
 
+  it('should render initial props immediately', function () {
+    assert(view.el.innerHTML === 'Ted');
+  });
+
+  it('should not render null or undefined', function () {
+    var View = ripple('<div>{{foo}}</div>');
+    var view = new View();
+    assert(view.el.innerHTML === "");
+  });
+
   it('should remove the binding when the view is destroyed', function(done){
     var el = view.el;
     dom.defer(function(){
@@ -108,24 +118,6 @@ describe('text interpolation', function () {
         assert(view.el.innerHTML === 'bar');
         done();
       });
-    });
-  });
-
-  describe('rendering empty strings', function () {
-    afterEach(function (done) {
-      dom.defer(function(){
-        assert(view.el.innerHTML === '');
-        done();
-      });
-    });
-    it('should render null', function(){
-      view.set('text', null);
-    });
-    it('should render false', function(){
-      view.set('text', false);
-    });
-    it('should render true', function(){
-      view.set('text', true);
     });
   });
 

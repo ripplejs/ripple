@@ -38,7 +38,7 @@ describe('View', function(){
   });
 
   it('should be able to set default properties', function () {
-    View.initialize(function(options){
+    View.parse(function(options){
       return {
         first: 'Fred',
         last: 'Flintstone'
