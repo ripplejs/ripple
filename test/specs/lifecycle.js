@@ -93,7 +93,7 @@ describe('lifecycle events', function () {
   });
 
   it('should fire a destroy event', function (done) {
-    View.on('destroy', function(){
+    View.on('destroyed', function(){
       done();
     });
     new View()
@@ -101,7 +101,7 @@ describe('lifecycle events', function () {
   });
 
   it('should have an destroy method', function (done) {
-    View.destroy(function(){
+    View.destroyed(function(){
       assert( this instanceof View );
       done();
     });
