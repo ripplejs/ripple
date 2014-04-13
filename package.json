@@ -1,6 +1,6 @@
 {
   "name": "ripplejs",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Minimal reactive views for building user interfaces",
   "main": "dist/ripple.js",
   "directories": {
