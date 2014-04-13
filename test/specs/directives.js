@@ -5,8 +5,10 @@ describe('directives', function () {
   it('should match directives with a string', function(done){
     var View = ripple('<div data-test="foo"></div>');
     View.directive('data-test', {
-      update: function(value){
+      update: function(value, el, view){
         assert(value === 'foo');
+        assert(el.hasAttribute('data-test'));
+        assert(view instanceof View);
         done();
       }
     });
@@ -19,6 +21,17 @@ describe('directives', function () {
     var View = ripple('<div data-test="foo"></div>');
     View.directive('data-test', function(value){
       assert(value === 'foo');
+      done();
+    });
+    var view = new View();
+  });
+
+  it('should pass in the element and the view', function(done){
+    var View = ripple('<div data-test="foo"></div>');
+    View.directive('data-test', function(value, el, view) {
+      assert(value === 'foo');
+      assert(el.hasAttribute('data-test'));
+      assert(view instanceof View);
       done();
     });
     var view = new View();
