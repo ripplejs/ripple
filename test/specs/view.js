@@ -64,4 +64,11 @@ describe('View', function(){
     assert(two.bindings === one.bindings);
   });
 
+  it('should allow a custom template when created', function () {
+    var view = new View({
+      template: '<ul></ul>'
+    });
+    assert(view.el.outerHTML === '<ul></ul>');
+  });
+
 })
