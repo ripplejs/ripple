@@ -2184,6 +2184,21 @@ var Bindings = require('./bindings');
 var each = require('each');
 
 /**
+ * Each of the events that are called on the view
+ * and have helper methods created for them.
+ */
+
+var lifecycleEvents = [
+  'construct',
+  'created',
+  'ready',
+  'mounted',
+  'unmounted',
+  'destroying',
+  'destroyed'
+];
+
+/**
  * Get a node using element the element itself
  * or a CSS selector
  *
@@ -2191,10 +2206,11 @@ var each = require('each');
  *
  * @return {Element}
  */
+
 function getNode(node) {
-  if(typeof node === 'string') {
+  if (typeof node === 'string') {
     node = document.querySelector(node);
-    if(!node) throw new Error('DOM node doesn\'t exist');
+    if (!node) throw new Error('DOM node doesn\'t exist');
   }
   return node;
 }
@@ -2218,17 +2234,6 @@ module.exports = function(template) {
   var Model = model();
 
   /**
-   * The default initialize function
-   *
-   * @param {Object} options
-   *
-   * @return {Object} The default state
-   */
-  var parse = function(options) {
-    return options.data;
-  };
-
-  /**
    * The view controls the lifecycle of the
    * element that it creates from a template.
    * Each element can only have one view and
@@ -2239,17 +2244,17 @@ module.exports = function(template) {
     View.emit('construct', this, [options]);
     this.options = options;
     this.children = [];
-    this.template = template;
+    this.template = options.template || template;
     this.owner = options.owner;
     this.bindings = options.bindings || bindings;
     this.root = this;
-    if(this.owner) {
+    if (this.owner) {
       this.owner.children.push(this);
       this.root = this.owner.root;
     }
     this.scope = options.scope;
     this.scopeWatchers = {};
-    this.model = new Model(parse(options));
+    this.model = new Model(View.parse(options));
     this.data = this.model.props;
     View.emit('created', this);
     this.el = this.render();
@@ -2297,7 +2302,7 @@ module.exports = function(template) {
    * @return {View}
    */
   View.filter = function(name, fn) {
-    if(typeof name !== 'string') {
+    if (typeof name !== 'string') {
       for(var key in name) {
         View.filter(key, name[key]);
       }
@@ -2312,7 +2317,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
-  View.use = function(fn, options){
+  View.use = function(fn, options) {
     fn(View, options);
     return this;
   };
@@ -2320,7 +2325,7 @@ module.exports = function(template) {
   /**
    * Create helper methods for binding to events
    */
-  ['construct', 'created', 'ready', 'mounted', 'unmounted', 'destroy'].forEach(function(name){
+  lifecycleEvents.forEach(function(name) {
     View[name] = function(fn){
       View.on(name, function(view, args){
         fn.apply(view, args);
@@ -2329,13 +2334,10 @@ module.exports = function(template) {
   });
 
   /**
-   * Set the initial state of the view. Accepts
-   * a function that should return an object
-   * that will be used for the initial state.
+   * Parse the options for the initial data
    */
-  View.parse = function(fn) {
-    parse = fn;
-    return this;
+  View.parse = function(options) {
+    return options.data;
   };
 
   /**
@@ -2348,11 +2350,11 @@ module.exports = function(template) {
    * @param {Object} obj
    */
   View.prototype.set = function(key, value) {
-    if( typeof key !== 'string' ) {
+    if ( typeof key !== 'string' ) {
       for(var name in key) this.set(name, key[name]);
       return this;
     }
-    if(this.scope && this.scopeWatchers[key]) {
+    if (this.scope && this.scopeWatchers[key]) {
       var self = this;
       this.scopeWatchers[key].forEach(function(callback){
         self.scope.unwatch(key, callback);
@@ -2371,7 +2373,7 @@ module.exports = function(template) {
    */
   View.prototype.get = function(key) {
     var value = this.model.get(key);
-    if(value === undefined && this.scope) {
+    if (value === undefined && this.scope) {
       return this.scope.get(key);
     }
     return value;
@@ -2379,19 +2381,18 @@ module.exports = function(template) {
 
   /**
    * Remove the element from the DOM
-   *
-   * @return {View}
    */
   View.prototype.destroy = function() {
     var self = this;
-    this.emit('destroy');
+    this.emit('destroying');
+    View.emit('destroying', this);
     this.remove();
     this.model.destroy();
     this.off();
     this.children.forEach(function(child){
       child.destroy();
     });
-    if(this.owner) {
+    if (this.owner) {
       var index = this.owner.children.indexOf(this);
       this.owner.children.splice(index, 1);
     }
@@ -2406,7 +2407,8 @@ module.exports = function(template) {
     this.owner = null;
     this.root = null;
     this.data = null;
-    View.emit('destroy', this);
+    this.emit('destroyed');
+    View.emit('destroyed', this);
   };
 
   /**
@@ -2414,17 +2416,15 @@ module.exports = function(template) {
    *
    * @return {Boolean}
    */
-  View.prototype.isMounted = function(){
+  View.prototype.isMounted = function() {
     return this.el != null && this.el.parentNode != null;
   };
 
   /**
    * Render the view to an element. This should
    * only ever render the element once.
-   *
-   * @return {View}
    */
-  View.prototype.render = function(){
+  View.prototype.render = function() {
     return this.bindings.bind(this);
   };
 
@@ -2437,6 +2437,7 @@ module.exports = function(template) {
    */
   View.prototype.appendTo = function(node) {
     getNode(node).appendChild(this.el);
+    this.emit('mounted');
     View.emit('mounted', this);
     return this;
   };
@@ -2450,6 +2451,7 @@ module.exports = function(template) {
    */
   View.prototype.replace = function(node) {
     node.parentNode.replaceChild(this.el, getNode(node));
+    this.emit('mounted');
     View.emit('mounted', this);
     return this;
   };
@@ -2463,6 +2465,7 @@ module.exports = function(template) {
    */
   View.prototype.before = function(node) {
     node.parentNode.insertBefore(this.el, getNode(node));
+    this.emit('mounted');
     View.emit('mounted', this);
     return this;
   };
@@ -2476,8 +2479,9 @@ module.exports = function(template) {
    */
   View.prototype.after = function(node) {
     var target = getNode(node);
-    if(target.nextSibling) {
+    if (target.nextSibling) {
       node.parentNode.insertBefore(this.el, target.nextSibling);
+      this.emit('mounted');
       View.emit('mounted', this);
     }
     else {
@@ -2491,9 +2495,10 @@ module.exports = function(template) {
    *
    * @return {View}
    */
-  View.prototype.remove = function(){
-    if(this.isMounted() === false) return this;
+  View.prototype.remove = function() {
+    if (this.isMounted() === false) return this;
     this.el.parentNode.removeChild(this.el);
+    this.emit('unmounted');
     View.emit('unmounted', this);
     return this;
   };
@@ -2524,15 +2529,15 @@ module.exports = function(template) {
    */
   View.prototype.watch = function(prop, callback) {
     var self = this;
-    if(Array.isArray(prop)) {
+    if (Array.isArray(prop)) {
       return prop.forEach(function(name){
         self.watch(name, callback);
       });
     }
     var value = this.model.get(prop);
-    if(value === undefined && this.scope) {
+    if (value === undefined && this.scope) {
       this.scope.watch(prop, callback);
-      if(!this.scopeWatchers[prop]) {
+      if (!this.scopeWatchers[prop]) {
         this.scopeWatchers[prop] = [];
       }
       this.scopeWatchers[prop].push(callback);
@@ -2549,15 +2554,15 @@ module.exports = function(template) {
    */
   View.prototype.unwatch = function(prop, callback) {
     var self = this;
-    if(Array.isArray(prop)) {
+    if (Array.isArray(prop)) {
       return prop.forEach(function(name){
         self.unwatch(name, callback);
       });
     }
     var value = this.model.get(prop);
-    if(value === undefined && this.scope) {
+    if (value === undefined && this.scope) {
       this.scope.unwatch(prop, callback);
-      if(!this.scopeWatchers[prop]) return;
+      if (!this.scopeWatchers[prop]) return;
       var index = this.scopeWatchers[prop].indexOf(callback);
       this.scopeWatchers[prop].splice(index, 1);
       return;
@@ -2788,7 +2793,7 @@ module.exports = function(bindings, view) {
     next();
   });
 
-  view.once('destroy', function(){
+  view.once('destroying', function(){
     while(activeBindings.length) {
       activeBindings.shift().unbind();
     }
@@ -2811,7 +2816,7 @@ var dom = require('fastdom');
  * @param {Object} binding
  */
 function Directive(view, node, attr, binding) {
-  this.update = this.update.bind(this);
+  this.queue = this.queue.bind(this);
   this.view = view;
   if(typeof binding === 'function') {
     this.binding = { update: binding };
@@ -2831,17 +2836,17 @@ function Directive(view, node, attr, binding) {
  */
 Directive.prototype.bind = function(){
   var view = this.view;
-  var update = this.update;
+  var queue = this.queue;
 
   if(this.binding.bind) {
-    this.binding.bind.call(this);
+    this.binding.bind.call(this, this.node, this.view);
   }
 
   this.props.forEach(function(prop){
-    view.watch(prop, update);
+    view.watch(prop, queue);
   });
 
-  this.binding.update.call(this, view.interpolate(this.text));
+  this.update();
 };
 
 /**
@@ -2849,10 +2854,10 @@ Directive.prototype.bind = function(){
  */
 Directive.prototype.unbind = function(){
   var view = this.view;
-  var update = this.update;
+  var queue = this.queue;
 
   this.props.forEach(function(prop){
-    view.unwatch(prop, update);
+    view.unwatch(prop, queue);
   });
 
   if(this.job) {
@@ -2860,7 +2865,7 @@ Directive.prototype.unbind = function(){
   }
 
   if(this.binding.unbind) {
-    this.binding.unbind.call(this);
+    this.binding.unbind.call(this, this.node, this.view);
   }
 };
 
@@ -2868,18 +2873,18 @@ Directive.prototype.unbind = function(){
  * Update the attribute.
  */
 Directive.prototype.update = function(){
-  var self = this;
-  var view = this.view;
-  var binding = this.binding;
-  var text = this.text;
+  var value = this.view.interpolate(this.text);
+  this.binding.update.call(this, value, this.node, this.view);
+};
 
+/**
+ * Queue an update
+ */
+Directive.prototype.queue = function(){
   if(this.job) {
     dom.clear(this.job);
   }
-
-  this.job = dom.write(function(){
-    binding.update.call(self, view.interpolate(text));
-  });
+  this.job = dom.write(this.update.bind(this));
 };
 
 module.exports = Directive;
@@ -3065,7 +3070,7 @@ function ChildBinding(view, node, View) {
     data: data
   });
   this.child.replace(node);
-  this.child.on('destroy', this.unbind.bind(this));
+  this.child.on('destroyed', this.unbind.bind(this));
   this.node = this.child.el;
   this.bind();
 }
