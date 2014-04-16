@@ -1,7 +1,7 @@
 describe('destroying', function () {
   var ripple = require('ripple');
   var assert = require('assert');
-  var dom = require('fastdom');
+  var frame = require('raf-queue');
   var View;
 
   beforeEach(function () {
@@ -53,7 +53,7 @@ describe('destroying', function () {
     view.appendTo(document.body);
     view.set('text', 'foo');
     view.destroy();
-    dom.defer(function(){
+    frame.defer(function(){
       assert(el.innerHTML === '');
       done();
     });
@@ -66,7 +66,7 @@ describe('destroying', function () {
     view.appendTo(document.body);
     view.set('text', 'foo');
     view.destroy();
-    dom.defer(function(){
+    frame.defer(function(){
       assert(el.id === '');
       done();
     });

@@ -20,12 +20,13 @@
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
+    "component/raf": "*",
     "ripplejs/interpolate": "0.4.3",
     "ripplejs/path-observer": "0.1.2",
-    "wilsonpage/fastdom": "v0.8.4",
     "yields/uniq": "*"
   },
   "development": {
-    "component/assert": "*"
+    "component/assert": "*",
+    "anthonyshort/raf-queue": "*"
   }
 }
