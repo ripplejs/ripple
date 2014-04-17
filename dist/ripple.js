@@ -1,40 +1,22 @@
+
 ;(function(){
 
 /**
- * Require the given path.
+ * Require the module at `name`.
  *
- * @param {String} path
+ * @param {String} name
  * @return {Object} exports
  * @api public
  */
 
-function require(path, parent, orig) {
-  var resolved = require.resolve(path);
+function _require(name) {
+  var module = _require.modules[name];
+  if (!module) throw new Error('failed to require "' + name + '"');
 
-  // lookup failed
-  if (null == resolved) {
-    orig = orig || path;
-    parent = parent || 'root';
-    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
-    err.path = orig;
-    err.parent = parent;
-    err.require = true;
-    throw err;
-  }
-
-  var module = require.modules[resolved];
-
-  // perform real require()
-  // by invoking the module's
-  // registered function
-  if (!module._resolving && !module.exports) {
-    var mod = {};
-    mod.exports = {};
-    mod.client = mod.component = true;
-    module._resolving = true;
-    module.call(this, mod.exports, require.relative(resolved), mod);
-    delete module._resolving;
-    module.exports = mod.exports;
+  if (!('exports' in module) && typeof module.definition === 'function') {
+    module.client = module.component = true;
+    module.definition.call(this, module.exports = {}, module);
+    delete module.definition;
   }
 
   return module.exports;
@@ -44,163 +26,36 @@ function require(path, parent, orig) {
  * Registered modules.
  */
 
-require.modules = {};
+_require.modules = {};
 
 /**
- * Registered aliases.
- */
-
-require.aliases = {};
-
-/**
- * Resolve `path`.
+ * Register module at `name` with callback `definition`.
  *
- * Lookup:
- *
- *   - PATH/index.js
- *   - PATH.js
- *   - PATH
- *
- * @param {String} path
- * @return {String} path or null
- * @api private
- */
-
-require.resolve = function(path) {
-  if (path.charAt(0) === '/') path = path.slice(1);
-
-  var paths = [
-    path,
-    path + '.js',
-    path + '.json',
-    path + '/index.js',
-    path + '/index.json'
-  ];
-
-  for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-    if (require.modules.hasOwnProperty(path)) return path;
-    if (require.aliases.hasOwnProperty(path)) return require.aliases[path];
-  }
-};
-
-/**
- * Normalize `path` relative to the current path.
- *
- * @param {String} curr
- * @param {String} path
- * @return {String}
- * @api private
- */
-
-require.normalize = function(curr, path) {
-  var segs = [];
-
-  if ('.' != path.charAt(0)) return path;
-
-  curr = curr.split('/');
-  path = path.split('/');
-
-  for (var i = 0; i < path.length; ++i) {
-    if ('..' == path[i]) {
-      curr.pop();
-    } else if ('.' != path[i] && '' != path[i]) {
-      segs.push(path[i]);
-    }
-  }
-
-  return curr.concat(segs).join('/');
-};
-
-/**
- * Register module at `path` with callback `definition`.
- *
- * @param {String} path
+ * @param {String} name
  * @param {Function} definition
  * @api private
  */
 
-require.register = function(path, definition) {
-  require.modules[path] = definition;
+_require.register = function (name, definition) {
+  _require.modules[name] = {
+    definition: definition
+  };
 };
 
 /**
- * Alias a module definition.
+ * Define a module's exports immediately with `exports`.
  *
- * @param {String} from
- * @param {String} to
+ * @param {String} name
+ * @param {Generic} exports
  * @api private
  */
 
-require.alias = function(from, to) {
-  if (!require.modules.hasOwnProperty(from)) {
-    throw new Error('Failed to alias "' + from + '", it does not exist');
-  }
-  require.aliases[to] = from;
-};
-
-/**
- * Return a require function relative to the `parent` path.
- *
- * @param {String} parent
- * @return {Function}
- * @api private
- */
-
-require.relative = function(parent) {
-  var p = require.normalize(parent, '..');
-
-  /**
-   * lastIndexOf helper.
-   */
-
-  function lastIndexOf(arr, obj) {
-    var i = arr.length;
-    while (i--) {
-      if (arr[i] === obj) return i;
-    }
-    return -1;
-  }
-
-  /**
-   * The relative require() itself.
-   */
-
-  function localRequire(path) {
-    var resolved = localRequire.resolve(path);
-    return require(resolved, parent, path);
-  }
-
-  /**
-   * Resolve relative to the parent.
-   */
-
-  localRequire.resolve = function(path) {
-    var c = path.charAt(0);
-    if ('/' == c) return path.slice(1);
-    if ('.' == c) return require.normalize(p, path);
-
-    // resolve deps by returning
-    // the dep in the nearest "deps"
-    // directory
-    var segs = parent.split('/');
-    var i = lastIndexOf(segs, 'deps') + 1;
-    if (!i) i = 0;
-    path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
-    return path;
+_require.define = function (name, exports) {
+  _require.modules[name] = {
+    exports: exports
   };
-
-  /**
-   * Check if module is defined at `path`.
-   */
-
-  localRequire.exists = function(path) {
-    return require.modules.hasOwnProperty(localRequire.resolve(path));
-  };
-
-  return localRequire;
 };
-require.register("anthonyshort-attributes/index.js", function(exports, require, module){
+_require.register("anthonyshort~attributes@0.0.1", function (exports, module) {
 module.exports = function(el) {
   var attrs = el.attributes,
       ret = {},
@@ -215,101 +70,8 @@ module.exports = function(el) {
   return ret;
 };
 });
-require.register("timoxley-to-array/index.js", function(exports, require, module){
-/**
- * Convert an array-like object into an `Array`.
- * If `collection` is already an `Array`, then will return a clone of `collection`.
- *
- * @param {Array | Mixed} collection An `Array` or array-like object to convert e.g. `arguments` or `NodeList`
- * @return {Array} Naive conversion of `collection` to a new `Array`.
- * @api public
- */
 
-module.exports = function toArray(collection) {
-  if (typeof collection === 'undefined') return []
-  if (collection === null) return [null]
-  if (collection === window) return [window]
-  if (typeof collection === 'string') return [collection]
-  if (isArray(collection)) return collection
-  if (typeof collection.length != 'number') return [collection]
-  if (typeof collection === 'function' && collection instanceof Function) return [collection]
-
-  var arr = []
-  for (var i = 0; i < collection.length; i++) {
-    if (Object.prototype.hasOwnProperty.call(collection, i) || i in collection) {
-      arr.push(collection[i])
-    }
-  }
-  if (!arr.length) return []
-  return arr
-}
-
-function isArray(arr) {
-  return Object.prototype.toString.call(arr) === "[object Array]";
-}
-
-});
-require.register("jaycetde-dom-contains/index.js", function(exports, require, module){
-'use strict';
-
-var containsFn
-	, node = window.Node
-;
-
-if (node && node.prototype) {
-	if (node.prototype.contains) {
-		containsFn = node.prototype.contains;
-	} else if (node.prototype.compareDocumentPosition) {
-		containsFn = function (arg) {
-			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
-		};
-	}
-}
-
-if (!containsFn) {
-	containsFn = function (arg) {
-		if (arg) {
-			while ((arg = arg.parentNode)) {
-				if (arg === this) {
-					return true;
-				}
-			}
-		}
-		return false;
-	};
-}
-
-module.exports = function (a, b) {
-	var adown = a.nodeType === 9 ? a.documentElement : a
-		, bup = b && b.parentNode
-	;
-
-	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
-};
-
-});
-require.register("anthonyshort-dom-walk/index.js", function(exports, require, module){
-var array = require('to-array');
-var contains = require('dom-contains');
-
-function walk(el, process, done, root) {
-  root = root || el;
-  var end = done || function(){};
-  var nodes = array(el.childNodes);
-
-  function next(){
-    if(nodes.length === 0) return end();
-    var nextNode = nodes.shift();
-    if(!contains(root, nextNode)) return next();
-    walk(nextNode, process, next, root);
-  }
-
-  process(el, next);
-}
-
-module.exports = walk;
-});
-require.register("anthonyshort-is-boolean-attribute/index.js", function(exports, require, module){
+_require.register("anthonyshort~is-boolean-attribute@0.0.1", function (exports, module) {
 
 /**
  * https://github.com/kangax/html-minifier/issues/63#issuecomment-18634279
@@ -355,7 +117,8 @@ module.exports = function(attr){
   return attrs.indexOf(attr) > -1;
 };
 });
-require.register("component-domify/index.js", function(exports, require, module){
+
+_require.register("component~domify@1.2.2", function (exports, module) {
 
 /**
  * Expose `parse`.
@@ -405,7 +168,7 @@ map.rect = [1, '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">','</svg>'
 
 function parse(html) {
   if ('string' != typeof html) throw new TypeError('String expected');
-  
+
   // tag name
   var m = /<([\w:]+)/.exec(html);
   if (!m) return document.createTextNode(html);
@@ -445,7 +208,44 @@ function parse(html) {
 }
 
 });
-require.register("component-props/index.js", function(exports, require, module){
+
+_require.register("component~type@1.0.0", function (exports, module) {
+
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Function]': return 'function';
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object String]': return 'string';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
+
+  return typeof val;
+};
+
+});
+
+_require.register("component~props@1.1.2", function (exports, module) {
 /**
  * Global Names
  */
@@ -533,12 +333,13 @@ function prefixed(str) {
 }
 
 });
-require.register("component-to-function/index.js", function(exports, require, module){
+
+_require.register("component~to-function@2.0.0", function (exports, module) {
 /**
  * Module Dependencies
  */
 
-var expr = require('props');
+var expr = _require("component~props@1.1.2");
 
 /**
  * Expose `toFunction()`.
@@ -661,49 +462,15 @@ function get(str) {
 }
 
 });
-require.register("component-type/index.js", function(exports, require, module){
 
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Function]': return 'function';
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object String]': return 'string';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val && val.nodeType === 1) return 'element';
-  if (val === Object(val)) return 'object';
-
-  return typeof val;
-};
-
-});
-require.register("component-each/index.js", function(exports, require, module){
+_require.register("component~each@0.2.3", function (exports, module) {
 
 /**
  * Module dependencies.
  */
 
-var type = require('type');
-var toFunction = require('to-function');
+var type = _require("component~type@1.0.0");
+var toFunction = _require("component~to-function@2.0.0");
 
 /**
  * HOP reference.
@@ -783,7 +550,8 @@ function array(obj, fn, ctx) {
 }
 
 });
-require.register("component-emitter/index.js", function(exports, require, module){
+
+_require.register("component~emitter@1.1.2", function (exports, module) {
 
 /**
  * Expose `Emitter`.
@@ -950,15 +718,163 @@ Emitter.prototype.hasListeners = function(event){
 };
 
 });
-require.register("ripplejs-expression/index.js", function(exports, require, module){
-var props = require('props');
-var unique = require('uniq');
+
+_require.register("component~indexof@0.0.1", function (exports, module) {
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+});
+
+_require.register("yields~uniq@master", function (exports, module) {
+
+/**
+ * dependencies
+ */
+
+try {
+  var indexOf = _require("component~indexof@0.0.1");
+} catch(e){
+  var indexOf = _require("indexof-component");
+}
+
+/**
+ * Create duplicate free array
+ * from the provided `arr`.
+ *
+ * @param {Array} arr
+ * @param {Array} select
+ * @return {Array}
+ */
+
+module.exports = function (arr, select) {
+  var len = arr.length, ret = [], v;
+  select = select ? (select instanceof Array ? select : [select]) : false;
+
+  for (var i = 0; i < len; i++) {
+    v = arr[i];
+    if (select && !~indexOf(select, v)) {
+      ret.push(v);
+    } else if (!~indexOf(ret, v)) {
+      ret.push(v);
+    }
+  }
+  return ret;
+};
+
+});
+
+_require.register("timoxley~to-array@0.2.1", function (exports, module) {
+/**
+ * Convert an array-like object into an `Array`.
+ * If `collection` is already an `Array`, then will return a clone of `collection`.
+ *
+ * @param {Array | Mixed} collection An `Array` or array-like object to convert e.g. `arguments` or `NodeList`
+ * @return {Array} Naive conversion of `collection` to a new `Array`.
+ * @api public
+ */
+
+module.exports = function toArray(collection) {
+  if (typeof collection === 'undefined') return []
+  if (collection === null) return [null]
+  if (collection === window) return [window]
+  if (typeof collection === 'string') return [collection]
+  if (isArray(collection)) return collection
+  if (typeof collection.length != 'number') return [collection]
+  if (typeof collection === 'function' && collection instanceof Function) return [collection]
+
+  var arr = []
+  for (var i = 0; i < collection.length; i++) {
+    if (Object.prototype.hasOwnProperty.call(collection, i) || i in collection) {
+      arr.push(collection[i])
+    }
+  }
+  if (!arr.length) return []
+  return arr
+}
+
+function isArray(arr) {
+  return Object.prototype.toString.call(arr) === "[object Array]";
+}
+
+});
+
+_require.register("jaycetde~dom-contains@master", function (exports, module) {
+'use strict';
+
+var containsFn
+	, node = window.Node
+;
+
+if (node && node.prototype) {
+	if (node.prototype.contains) {
+		containsFn = node.prototype.contains;
+	} else if (node.prototype.compareDocumentPosition) {
+		containsFn = function (arg) {
+			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
+		};
+	}
+}
+
+if (!containsFn) {
+	containsFn = function (arg) {
+		if (arg) {
+			while ((arg = arg.parentNode)) {
+				if (arg === this) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+}
+
+module.exports = function (a, b) {
+	var adown = a.nodeType === 9 ? a.documentElement : a
+		, bup = b && b.parentNode
+	;
+
+	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
+};
+
+});
+
+_require.register("anthonyshort~dom-walk@0.1.0", function (exports, module) {
+var array = _require("timoxley~to-array@0.2.1");
+var contains = _require("jaycetde~dom-contains@master");
+
+function walk(el, process, done, root) {
+  root = root || el;
+  var end = done || function(){};
+  var nodes = array(el.childNodes);
+
+  function next(){
+    if(nodes.length === 0) return end();
+    var nextNode = nodes.shift();
+    if(!contains(root, nextNode)) return next();
+    walk(nextNode, process, next, root);
+  }
+
+  process(el, next);
+}
+
+module.exports = walk;
+});
+
+_require.register("ripplejs~expression@0.2.0", function (exports, module) {
+var props = _require("component~props@1.1.2");
+var unique = _require("yields~uniq@master");
 var cache = {};
 
 function Expression(str) {
-  this.props = unique(props(str)).filter(function(prop){
-    return prop != 'this';
-  });
+  this.str = str;
+  this.props = unique(props(str));
   this.fn = compile(str, this.props);
 }
 
@@ -966,6 +882,10 @@ Expression.prototype.exec = function(scope, context){
   scope = scope || {};
   var args = scope ? values(scope, this.props) : [];
   return this.fn.apply(context, args);
+};
+
+Expression.prototype.toString = function(){
+  return this.str;
 };
 
 function values(obj, keys) {
@@ -985,7 +905,8 @@ function compile(str, props){
 
 module.exports = Expression;
 });
-require.register("component-format-parser/index.js", function(exports, require, module){
+
+_require.register("component~format-parser@0.0.2", function (exports, module) {
 
 /**
  * Parse the given format `str`.
@@ -1020,19 +941,20 @@ function parseArgs(str) {
 	var args = [];
 	var re = /"([^"]*)"|'([^']*)'|([^ \t,]+)/g;
 	var m;
-	
+
 	while (m = re.exec(str)) {
 		args.push(m[2] || m[1] || m[0]);
 	}
-	
+
 	return args;
 }
 
 });
-require.register("ripplejs-interpolate/index.js", function(exports, require, module){
-var Expression = require('expression');
-var parse = require('format-parser');
-var unique = require('uniq');
+
+_require.register("ripplejs~interpolate@0.4.3", function (exports, module) {
+var Expression = _require("ripplejs~expression@0.2.0");
+var parse = _require("component~format-parser@0.0.2");
+var unique = _require("yields~uniq@master");
 
 /**
  * Run a value through all filters
@@ -1242,7 +1164,8 @@ Interpolate.prototype.map = function(str, callback) {
 
 module.exports = Interpolate;
 });
-require.register("ripplejs-keypath/index.js", function(exports, require, module){
+
+_require.register("ripplejs~keypath@0.0.1", function (exports, module) {
 exports.get = function(obj, path) {
   var parts = path.split('.');
   var value = obj;
@@ -1266,7 +1189,8 @@ exports.set = function(obj, path, value) {
   target[last] = value;
 };
 });
-require.register("jkroso-type/index.js", function(exports, require, module){
+
+_require.register("jkroso~type@1.1.0", function (exports, module) {
 
 var toString = {}.toString
 var DomNode = typeof window != 'undefined'
@@ -1319,9 +1243,10 @@ var types = exports.types = {
 }
 
 });
-require.register("jkroso-equals/index.js", function(exports, require, module){
 
-var type = require('type')
+_require.register("jkroso~equals@0.3.6", function (exports, module) {
+
+var type = _require("jkroso~type@1.1.0")
 
 /**
  * expose equals
@@ -1460,16 +1385,17 @@ function getEnumerableProperties (object) {
 }
 
 });
-require.register("component-clone/index.js", function(exports, require, module){
+
+_require.register("component~clone@0.2.2", function (exports, module) {
 /**
  * Module dependencies.
  */
 
 var type;
 try {
-  type = require('component-type');
+  type = _require("component~type@1.0.0");
 } catch (_) {
-  type = require('type');
+  type = _require("component~type@1.0.0");
 }
 
 /**
@@ -1520,11 +1446,12 @@ function clone(obj){
 }
 
 });
-require.register("ripplejs-path-observer/index.js", function(exports, require, module){
-var emitter = require('emitter');
-var equals = require('equals');
-var clone = require('clone');
-var keypath = require('keypath');
+
+_require.register("ripplejs~path-observer@0.1.2", function (exports, module) {
+var emitter = _require("component~emitter@1.1.2");
+var equals = _require("jkroso~equals@0.3.6");
+var clone = _require("component~clone@0.2.2");
+var keypath = _require("ripplejs~keypath@0.0.1");
 
 /**
  * Takes a path like ‘foo.bar.baz’ and returns
@@ -1688,7 +1615,8 @@ module.exports = function(obj) {
   return PathObserver;
 };
 });
-require.register("wilsonpage-fastdom/index.js", function(exports, require, module){
+
+_require.register("wilsonpage~fastdom@v0.8.4", function (exports, module) {
 
 /**
  * FastDom
@@ -2115,57 +2043,9 @@ require.register("wilsonpage-fastdom/index.js", function(exports, require, modul
 })(window.fastdom);
 
 });
-require.register("component-indexof/index.js", function(exports, require, module){
 
-var indexOf = [].indexOf;
-
-module.exports = function(arr, obj){
-  if (indexOf) return arr.indexOf(obj);
-  for (var i = 0; i < arr.length; ++i) {
-    if (arr[i] === obj) return i;
-  }
-  return -1;
-};
-});
-require.register("yields-uniq/index.js", function(exports, require, module){
-
-/**
- * dependencies
- */
-
-try {
-  var indexOf = require('indexof');
-} catch(e){
-  var indexOf = require('indexof-component');
-}
-
-/**
- * Create duplicate free array
- * from the provided `arr`.
- *
- * @param {Array} arr
- * @param {Array} select
- * @return {Array}
- */
-
-module.exports = function (arr, select) {
-  var len = arr.length, ret = [], v;
-  select = select ? (select instanceof Array ? select : [select]) : false;
-
-  for (var i = 0; i < len; i++) {
-    v = arr[i];
-    if (select && !~indexOf(select, v)) {
-      ret.push(v);
-    } else if (!~indexOf(ret, v)) {
-      ret.push(v);
-    }
-  }
-  return ret;
-};
-
-});
-require.register("ripple/lib/index.js", function(exports, require, module){
-var view = require('./view');
+_require.register("ripple", function (exports, module) {
+var view = _require("ripple/lib/view.js");
 
 module.exports = function(template) {
   if(template.indexOf('#') === 0 || template.indexOf('.') === 0) {
@@ -2177,11 +2057,12 @@ module.exports = function(template) {
   return view(template);
 };
 });
-require.register("ripple/lib/view.js", function(exports, require, module){
-var emitter = require('emitter');
-var model = require('./model');
-var Bindings = require('./bindings');
-var each = require('each');
+
+_require.register("ripple/lib/view.js", function (exports, module) {
+var emitter = _require("component~emitter@1.1.2");
+var model = _require("ripple/lib/model.js");
+var Bindings = _require("ripple/lib/bindings.js");
+var each = _require("component~each@0.2.3");
 
 /**
  * Each of the events that are called on the view
@@ -2573,9 +2454,10 @@ module.exports = function(template) {
   return View;
 };
 });
-require.register("ripple/lib/bindings.js", function(exports, require, module){
-var render = require('./render');
-var Interpolator = require('interpolate');
+
+_require.register("ripple/lib/bindings.js", function (exports, module) {
+var render = _require("ripple/lib/render.js");
+var Interpolator = _require("ripplejs~interpolate@0.4.3");
 
 /**
  * The compiler will take a set of views, an element and
@@ -2650,9 +2532,10 @@ Bindings.prototype.bind = function(view) {
 
 module.exports = Bindings;
 });
-require.register("ripple/lib/model.js", function(exports, require, module){
-var observer = require('path-observer');
-var emitter = require('emitter');
+
+_require.register("ripple/lib/model.js", function (exports, module) {
+var observer = _require("ripplejs~path-observer@0.1.2");
+var emitter = _require("component~emitter@1.1.2");
 
 module.exports = function(){
 
@@ -2752,15 +2635,16 @@ module.exports = function(){
   return Model;
 };
 });
-require.register("ripple/lib/render.js", function(exports, require, module){
-var walk = require('dom-walk');
-var each = require('each');
-var attrs = require('attributes');
-var domify = require('domify');
-var TextBinding = require('./text-binding');
-var AttrBinding = require('./attr-binding');
-var ChildBinding = require('./child-binding');
-var Directive = require('./directive');
+
+_require.register("ripple/lib/render.js", function (exports, module) {
+var walk = _require("anthonyshort~dom-walk@0.1.0");
+var each = _require("component~each@0.2.3");
+var attrs = _require("anthonyshort~attributes@0.0.1");
+var domify = _require("component~domify@1.2.2");
+var TextBinding = _require("ripple/lib/text-binding.js");
+var AttrBinding = _require("ripple/lib/attr-binding.js");
+var ChildBinding = _require("ripple/lib/child-binding.js");
+var Directive = _require("ripple/lib/directive.js");
 
 module.exports = function(bindings, view) {
   var el = domify(view.template);
@@ -2804,8 +2688,9 @@ module.exports = function(bindings, view) {
   return fragment.firstChild;
 };
 });
-require.register("ripple/lib/directive.js", function(exports, require, module){
-var dom = require('fastdom');
+
+_require.register("ripple/lib/directive.js", function (exports, module) {
+var dom = _require("wilsonpage~fastdom@v0.8.4");
 
 /**
  * Creates a new directive using a binding object.
@@ -2889,8 +2774,9 @@ Directive.prototype.queue = function(){
 
 module.exports = Directive;
 });
-require.register("ripple/lib/text-binding.js", function(exports, require, module){
-var dom = require('fastdom');
+
+_require.register("ripple/lib/text-binding.js", function (exports, module) {
+var dom = _require("wilsonpage~fastdom@v0.8.4");
 
 function TextBinding(view, node) {
   this.update = this.update.bind(this);
@@ -2956,9 +2842,10 @@ TextBinding.prototype.update = function(){
 module.exports = TextBinding;
 
 });
-require.register("ripple/lib/attr-binding.js", function(exports, require, module){
-var dom = require('fastdom');
-var isBoolean = require('is-boolean-attribute');
+
+_require.register("ripple/lib/attr-binding.js", function (exports, module) {
+var dom = _require("wilsonpage~fastdom@v0.8.4");
+var isBoolean = _require("anthonyshort~is-boolean-attribute@0.0.1");
 
 /**
  * Creates a new attribute text binding for a view.
@@ -3044,11 +2931,12 @@ AttrBinding.prototype.update = function(){
 
 module.exports = AttrBinding;
 });
-require.register("ripple/lib/child-binding.js", function(exports, require, module){
-var attrs = require('attributes');
-var each = require('each');
-var unique = require('uniq');
-var dom = require('fastdom');
+
+_require.register("ripple/lib/child-binding.js", function (exports, module) {
+var attrs = _require("anthonyshort~attributes@0.0.1");
+var each = _require("component~each@0.2.3");
+var unique = _require("yields~uniq@master");
+var dom = _require("wilsonpage~fastdom@v0.8.4");
 
 /**
  * Creates a new sub-view at a node and binds
@@ -3157,109 +3045,11 @@ module.exports = ChildBinding;
 
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-require.alias("anthonyshort-attributes/index.js", "ripple/deps/attributes/index.js");
-require.alias("anthonyshort-attributes/index.js", "attributes/index.js");
-
-require.alias("anthonyshort-dom-walk/index.js", "ripple/deps/dom-walk/index.js");
-require.alias("anthonyshort-dom-walk/index.js", "ripple/deps/dom-walk/index.js");
-require.alias("anthonyshort-dom-walk/index.js", "dom-walk/index.js");
-require.alias("timoxley-to-array/index.js", "anthonyshort-dom-walk/deps/to-array/index.js");
-
-require.alias("jaycetde-dom-contains/index.js", "anthonyshort-dom-walk/deps/dom-contains/index.js");
-
-require.alias("anthonyshort-dom-walk/index.js", "anthonyshort-dom-walk/index.js");
-require.alias("anthonyshort-is-boolean-attribute/index.js", "ripple/deps/is-boolean-attribute/index.js");
-require.alias("anthonyshort-is-boolean-attribute/index.js", "ripple/deps/is-boolean-attribute/index.js");
-require.alias("anthonyshort-is-boolean-attribute/index.js", "is-boolean-attribute/index.js");
-require.alias("anthonyshort-is-boolean-attribute/index.js", "anthonyshort-is-boolean-attribute/index.js");
-require.alias("component-domify/index.js", "ripple/deps/domify/index.js");
-require.alias("component-domify/index.js", "domify/index.js");
-
-require.alias("component-each/index.js", "ripple/deps/each/index.js");
-require.alias("component-each/index.js", "each/index.js");
-require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
-require.alias("component-props/index.js", "component-to-function/deps/props/index.js");
-
-require.alias("component-type/index.js", "component-each/deps/type/index.js");
-
-require.alias("component-emitter/index.js", "ripple/deps/emitter/index.js");
-require.alias("component-emitter/index.js", "emitter/index.js");
-
-require.alias("ripplejs-interpolate/index.js", "ripple/deps/interpolate/index.js");
-require.alias("ripplejs-interpolate/index.js", "ripple/deps/interpolate/index.js");
-require.alias("ripplejs-interpolate/index.js", "interpolate/index.js");
-require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
-require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
-require.alias("component-props/index.js", "ripplejs-expression/deps/props/index.js");
-
-require.alias("yields-uniq/index.js", "ripplejs-expression/deps/uniq/index.js");
-require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
-
-require.alias("ripplejs-expression/index.js", "ripplejs-expression/index.js");
-require.alias("component-format-parser/index.js", "ripplejs-interpolate/deps/format-parser/index.js");
-
-require.alias("yields-uniq/index.js", "ripplejs-interpolate/deps/uniq/index.js");
-require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
-
-require.alias("component-props/index.js", "ripplejs-interpolate/deps/props/index.js");
-
-require.alias("ripplejs-interpolate/index.js", "ripplejs-interpolate/index.js");
-require.alias("ripplejs-path-observer/index.js", "ripple/deps/path-observer/index.js");
-require.alias("ripplejs-path-observer/index.js", "ripple/deps/path-observer/index.js");
-require.alias("ripplejs-path-observer/index.js", "path-observer/index.js");
-require.alias("ripplejs-keypath/index.js", "ripplejs-path-observer/deps/keypath/index.js");
-require.alias("ripplejs-keypath/index.js", "ripplejs-path-observer/deps/keypath/index.js");
-require.alias("ripplejs-keypath/index.js", "ripplejs-keypath/index.js");
-require.alias("component-emitter/index.js", "ripplejs-path-observer/deps/emitter/index.js");
-
-require.alias("jkroso-equals/index.js", "ripplejs-path-observer/deps/equals/index.js");
-require.alias("jkroso-type/index.js", "jkroso-equals/deps/type/index.js");
-
-require.alias("component-clone/index.js", "ripplejs-path-observer/deps/clone/index.js");
-require.alias("component-type/index.js", "component-clone/deps/type/index.js");
-
-require.alias("ripplejs-path-observer/index.js", "ripplejs-path-observer/index.js");
-require.alias("wilsonpage-fastdom/index.js", "ripple/deps/fastdom/index.js");
-require.alias("wilsonpage-fastdom/index.js", "ripple/deps/fastdom/index.js");
-require.alias("wilsonpage-fastdom/index.js", "fastdom/index.js");
-require.alias("wilsonpage-fastdom/index.js", "wilsonpage-fastdom/index.js");
-require.alias("yields-uniq/index.js", "ripple/deps/uniq/index.js");
-require.alias("yields-uniq/index.js", "uniq/index.js");
-require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
-
-require.alias("ripple/lib/index.js", "ripple/index.js");if (typeof exports == "object") {
-  module.exports = require("ripple");
+if (typeof exports == "object") {
+  module.exports = _require("ripple");
 } else if (typeof define == "function" && define.amd) {
-  define([], function(){ return require("ripple"); });
+  define([], function(){ return _require("ripple"); });
 } else {
-  this["ripple"] = require("ripple");
-}})();
+  this["ripple"] = _require("ripple");
+}
+})()

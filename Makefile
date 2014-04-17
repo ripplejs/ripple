@@ -4,6 +4,7 @@ JSHINT = ./node_modules/.bin/jshint
 MOCHA = ./node_modules/.bin/mocha-phantomjs
 BUMP = ./node_modules/.bin/bump
 MINIFY = ./node_modules/.bin/minify
+BFC = ./node_modules/.bin/bfc
 
 build: components $(find lib/*.js)
 	@${COMPONENT} build --dev
@@ -26,6 +27,7 @@ standalone: node_modules
 	mkdir dist
 	cp build/standalone.js dist/ripple.js && rm build/standalone.js
 	@${MINIFY} dist/ripple.js dist/ripple.min.js
+	bfc ./dist/ripple.js > ./dist/tmp.js && mv ./dist/tmp.js ./dist/ripple.js
 
 karma: build
 	${KARMA} start --no-auto-watch --single-run
