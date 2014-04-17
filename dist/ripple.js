@@ -1,22 +1,40 @@
-
 ;(function(){
 
 /**
- * Require the module at `name`.
+ * Require the given path.
  *
- * @param {String} name
+ * @param {String} path
  * @return {Object} exports
  * @api public
  */
 
-function _require(name) {
-  var module = _require.modules[name];
-  if (!module) throw new Error('failed to require "' + name + '"');
+function _require(path, parent, orig) {
+  var resolved = _require.resolve(path);
 
-  if (!('exports' in module) && typeof module.definition === 'function') {
-    module.client = module.component = true;
-    module.definition.call(this, module.exports = {}, module);
-    delete module.definition;
+  // lookup failed
+  if (null == resolved) {
+    orig = orig || path;
+    parent = parent || 'root';
+    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
+    err.path = orig;
+    err.parent = parent;
+    err._require = true;
+    throw err;
+  }
+
+  var module = _require.modules[resolved];
+
+  // perform real require()
+  // by invoking the module's
+  // registered function
+  if (!module._resolving && !module.exports) {
+    var mod = {};
+    mod.exports = {};
+    mod.client = mod.component = true;
+    module._resolving = true;
+    module.call(this, mod.exports, _require.relative(resolved), mod);
+    delete module._resolving;
+    module.exports = mod.exports;
   }
 
   return module.exports;
@@ -29,33 +47,160 @@ function _require(name) {
 _require.modules = {};
 
 /**
- * Register module at `name` with callback `definition`.
+ * Registered aliases.
+ */
+
+_require.aliases = {};
+
+/**
+ * Resolve `path`.
  *
- * @param {String} name
+ * Lookup:
+ *
+ *   - PATH/index.js
+ *   - PATH.js
+ *   - PATH
+ *
+ * @param {String} path
+ * @return {String} path or null
+ * @api private
+ */
+
+_require.resolve = function(path) {
+  if (path.charAt(0) === '/') path = path.slice(1);
+
+  var paths = [
+    path,
+    path + '.js',
+    path + '.json',
+    path + '/index.js',
+    path + '/index.json'
+  ];
+
+  for (var i = 0; i < paths.length; i++) {
+    var path = paths[i];
+    if (_require.modules.hasOwnProperty(path)) return path;
+    if (_require.aliases.hasOwnProperty(path)) return _require.aliases[path];
+  }
+};
+
+/**
+ * Normalize `path` relative to the current path.
+ *
+ * @param {String} curr
+ * @param {String} path
+ * @return {String}
+ * @api private
+ */
+
+_require.normalize = function(curr, path) {
+  var segs = [];
+
+  if ('.' != path.charAt(0)) return path;
+
+  curr = curr.split('/');
+  path = path.split('/');
+
+  for (var i = 0; i < path.length; ++i) {
+    if ('..' == path[i]) {
+      curr.pop();
+    } else if ('.' != path[i] && '' != path[i]) {
+      segs.push(path[i]);
+    }
+  }
+
+  return curr.concat(segs).join('/');
+};
+
+/**
+ * Register module at `path` with callback `definition`.
+ *
+ * @param {String} path
  * @param {Function} definition
  * @api private
  */
 
-_require.register = function (name, definition) {
-  _require.modules[name] = {
-    definition: definition
-  };
+_require.register = function(path, definition) {
+  _require.modules[path] = definition;
 };
 
 /**
- * Define a module's exports immediately with `exports`.
+ * Alias a module definition.
  *
- * @param {String} name
- * @param {Generic} exports
+ * @param {String} from
+ * @param {String} to
  * @api private
  */
 
-_require.define = function (name, exports) {
-  _require.modules[name] = {
-    exports: exports
-  };
+_require.alias = function(from, to) {
+  if (!_require.modules.hasOwnProperty(from)) {
+    throw new Error('Failed to alias "' + from + '", it does not exist');
+  }
+  _require.aliases[to] = from;
 };
-_require.register("anthonyshort~attributes@0.0.1", function (exports, module) {
+
+/**
+ * Return a require function relative to the `parent` path.
+ *
+ * @param {String} parent
+ * @return {Function}
+ * @api private
+ */
+
+_require.relative = function(parent) {
+  var p = _require.normalize(parent, '..');
+
+  /**
+   * lastIndexOf helper.
+   */
+
+  function lastIndexOf(arr, obj) {
+    var i = arr.length;
+    while (i--) {
+      if (arr[i] === obj) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * The relative require() itself.
+   */
+
+  function localRequire(path) {
+    var resolved = localRequire.resolve(path);
+    return _require(resolved, parent, path);
+  }
+
+  /**
+   * Resolve relative to the parent.
+   */
+
+  localRequire.resolve = function(path) {
+    var c = path.charAt(0);
+    if ('/' == c) return path.slice(1);
+    if ('.' == c) return _require.normalize(p, path);
+
+    // resolve deps by returning
+    // the dep in the nearest "deps"
+    // directory
+    var segs = parent.split('/');
+    var i = lastIndexOf(segs, 'deps') + 1;
+    if (!i) i = 0;
+    path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
+    return path;
+  };
+
+  /**
+   * Check if module is defined at `path`.
+   */
+
+  localRequire.exists = function(path) {
+    return _require.modules.hasOwnProperty(localRequire.resolve(path));
+  };
+
+  return localRequire;
+};
+_require.register("anthonyshort-attributes/index.js", function(exports, _require, module){
 module.exports = function(el) {
   var attrs = el.attributes,
       ret = {},
@@ -70,8 +215,101 @@ module.exports = function(el) {
   return ret;
 };
 });
+_require.register("timoxley-to-array/index.js", function(exports, _require, module){
+/**
+ * Convert an array-like object into an `Array`.
+ * If `collection` is already an `Array`, then will return a clone of `collection`.
+ *
+ * @param {Array | Mixed} collection An `Array` or array-like object to convert e.g. `arguments` or `NodeList`
+ * @return {Array} Naive conversion of `collection` to a new `Array`.
+ * @api public
+ */
 
-_require.register("anthonyshort~is-boolean-attribute@0.0.1", function (exports, module) {
+module.exports = function toArray(collection) {
+  if (typeof collection === 'undefined') return []
+  if (collection === null) return [null]
+  if (collection === window) return [window]
+  if (typeof collection === 'string') return [collection]
+  if (isArray(collection)) return collection
+  if (typeof collection.length != 'number') return [collection]
+  if (typeof collection === 'function' && collection instanceof Function) return [collection]
+
+  var arr = []
+  for (var i = 0; i < collection.length; i++) {
+    if (Object.prototype.hasOwnProperty.call(collection, i) || i in collection) {
+      arr.push(collection[i])
+    }
+  }
+  if (!arr.length) return []
+  return arr
+}
+
+function isArray(arr) {
+  return Object.prototype.toString.call(arr) === "[object Array]";
+}
+
+});
+_require.register("jaycetde-dom-contains/index.js", function(exports, _require, module){
+'use strict';
+
+var containsFn
+	, node = window.Node
+;
+
+if (node && node.prototype) {
+	if (node.prototype.contains) {
+		containsFn = node.prototype.contains;
+	} else if (node.prototype.compareDocumentPosition) {
+		containsFn = function (arg) {
+			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
+		};
+	}
+}
+
+if (!containsFn) {
+	containsFn = function (arg) {
+		if (arg) {
+			while ((arg = arg.parentNode)) {
+				if (arg === this) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+}
+
+module.exports = function (a, b) {
+	var adown = a.nodeType === 9 ? a.documentElement : a
+		, bup = b && b.parentNode
+	;
+
+	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
+};
+
+});
+_require.register("anthonyshort-dom-walk/index.js", function(exports, _require, module){
+var array = _require('to-array');
+var contains = _require('dom-contains');
+
+function walk(el, process, done, root) {
+  root = root || el;
+  var end = done || function(){};
+  var nodes = array(el.childNodes);
+
+  function next(){
+    if(nodes.length === 0) return end();
+    var nextNode = nodes.shift();
+    if(!contains(root, nextNode)) return next();
+    walk(nextNode, process, next, root);
+  }
+
+  process(el, next);
+}
+
+module.exports = walk;
+});
+_require.register("anthonyshort-is-boolean-attribute/index.js", function(exports, _require, module){
 
 /**
  * https://github.com/kangax/html-minifier/issues/63#issuecomment-18634279
@@ -117,8 +355,145 @@ module.exports = function(attr){
   return attrs.indexOf(attr) > -1;
 };
 });
+_require.register("component-raf/index.js", function(exports, _require, module){
+/**
+ * Expose `requestAnimationFrame()`.
+ */
 
-_require.register("component~domify@1.2.2", function (exports, module) {
+exports = module.exports = window.requestAnimationFrame
+  || window.webkitRequestAnimationFrame
+  || window.mozRequestAnimationFrame
+  || window.oRequestAnimationFrame
+  || window.msRequestAnimationFrame
+  || fallback;
+
+/**
+ * Fallback implementation.
+ */
+
+var prev = new Date().getTime();
+function fallback(fn) {
+  var curr = new Date().getTime();
+  var ms = Math.max(0, 16 - (curr - prev));
+  var req = setTimeout(fn, ms);
+  prev = curr;
+  return req;
+}
+
+/**
+ * Cancel.
+ */
+
+var cancel = window.cancelAnimationFrame
+  || window.webkitCancelAnimationFrame
+  || window.mozCancelAnimationFrame
+  || window.oCancelAnimationFrame
+  || window.msCancelAnimationFrame
+  || window.clearTimeout;
+
+exports.cancel = function(id){
+  cancel.call(window, id);
+};
+
+});
+_require.register("anthonyshort-raf-queue/index.js", function(exports, _require, module){
+var raf = _require('raf');
+var queue = [];
+var requestId;
+var id = 0;
+
+/**
+ * Add a job to the queue passing in
+ * an optional context to call the function in
+ *
+ * @param {Function} fn
+ * @param {Object} cxt
+ */
+
+function frame (fn, cxt) {
+  var frameId = id++;
+  var length = queue.push({
+    id: frameId,
+    fn: fn,
+    cxt: cxt
+  });
+  if(!requestId) requestId = raf(flush);
+  return frameId;
+};
+
+/**
+ * Remove a job from the queue using the
+ * frameId returned when it was added
+ *
+ * @param {Number} id
+ */
+
+frame.cancel = function (id) {
+  for (var i = queue.length - 1; i >= 0; i--) {
+    if(queue[i].id === id) {
+      queue.splice(i, 1);
+      break;
+    }
+  }
+};
+
+/**
+ * Add a function to the queue, but only once
+ *
+ * @param {Function} fn
+ * @param {Object} cxt
+ */
+
+frame.once = function (fn, cxt) {
+  for (var i = queue.length - 1; i >= 0; i--) {
+    if(queue[i].fn === fn) return;
+  }
+  frame(fn, cxt);
+};
+
+/**
+ * Get the current queue length
+ */
+
+frame.queued = function () {
+  return queue.length;
+};
+
+/**
+ * Clear the queue and remove all pending jobs
+ */
+
+frame.clear = function () {
+  queue = [];
+  if(requestId) raf.cancel(requestId);
+  requestId = null;
+};
+
+/**
+ * Fire a function after all of the jobs in the
+ * current queue have fired. This is usually used
+ * in testing.
+ */
+
+frame.defer = function (fn) {
+  raf(raf.bind(null, fn));
+};
+
+/**
+ * Flushes the queue and runs each job
+ */
+
+function flush () {
+  while(queue.length) {
+    var job = queue.shift();
+    job.fn.call(job.cxt);
+  }
+  requestId = null;
+}
+
+module.exports = frame;
+});
+_require.register("component-domify/index.js", function(exports, _require, module){
 
 /**
  * Expose `parse`.
@@ -168,7 +543,7 @@ map.rect = [1, '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">','</svg>'
 
 function parse(html) {
   if ('string' != typeof html) throw new TypeError('String expected');
-
+  
   // tag name
   var m = /<([\w:]+)/.exec(html);
   if (!m) return document.createTextNode(html);
@@ -208,44 +583,7 @@ function parse(html) {
 }
 
 });
-
-_require.register("component~type@1.0.0", function (exports, module) {
-
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Function]': return 'function';
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object String]': return 'string';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val && val.nodeType === 1) return 'element';
-  if (val === Object(val)) return 'object';
-
-  return typeof val;
-};
-
-});
-
-_require.register("component~props@1.1.2", function (exports, module) {
+_require.register("component-props/index.js", function(exports, _require, module){
 /**
  * Global Names
  */
@@ -333,13 +671,12 @@ function prefixed(str) {
 }
 
 });
-
-_require.register("component~to-function@2.0.0", function (exports, module) {
+_require.register("component-to-function/index.js", function(exports, _require, module){
 /**
  * Module Dependencies
  */
 
-var expr = _require("component~props@1.1.2");
+var expr = _require('props');
 
 /**
  * Expose `toFunction()`.
@@ -462,15 +799,49 @@ function get(str) {
 }
 
 });
+_require.register("component-type/index.js", function(exports, _require, module){
 
-_require.register("component~each@0.2.3", function (exports, module) {
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Function]': return 'function';
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object String]': return 'string';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
+
+  return typeof val;
+};
+
+});
+_require.register("component-each/index.js", function(exports, _require, module){
 
 /**
  * Module dependencies.
  */
 
-var type = _require("component~type@1.0.0");
-var toFunction = _require("component~to-function@2.0.0");
+var type = _require('type');
+var toFunction = _require('to-function');
 
 /**
  * HOP reference.
@@ -550,8 +921,7 @@ function array(obj, fn, ctx) {
 }
 
 });
-
-_require.register("component~emitter@1.1.2", function (exports, module) {
+_require.register("component-emitter/index.js", function(exports, _require, module){
 
 /**
  * Expose `Emitter`.
@@ -718,158 +1088,9 @@ Emitter.prototype.hasListeners = function(event){
 };
 
 });
-
-_require.register("component~indexof@0.0.1", function (exports, module) {
-
-var indexOf = [].indexOf;
-
-module.exports = function(arr, obj){
-  if (indexOf) return arr.indexOf(obj);
-  for (var i = 0; i < arr.length; ++i) {
-    if (arr[i] === obj) return i;
-  }
-  return -1;
-};
-});
-
-_require.register("yields~uniq@master", function (exports, module) {
-
-/**
- * dependencies
- */
-
-try {
-  var indexOf = _require("component~indexof@0.0.1");
-} catch(e){
-  var indexOf = _require("indexof-component");
-}
-
-/**
- * Create duplicate free array
- * from the provided `arr`.
- *
- * @param {Array} arr
- * @param {Array} select
- * @return {Array}
- */
-
-module.exports = function (arr, select) {
-  var len = arr.length, ret = [], v;
-  select = select ? (select instanceof Array ? select : [select]) : false;
-
-  for (var i = 0; i < len; i++) {
-    v = arr[i];
-    if (select && !~indexOf(select, v)) {
-      ret.push(v);
-    } else if (!~indexOf(ret, v)) {
-      ret.push(v);
-    }
-  }
-  return ret;
-};
-
-});
-
-_require.register("timoxley~to-array@0.2.1", function (exports, module) {
-/**
- * Convert an array-like object into an `Array`.
- * If `collection` is already an `Array`, then will return a clone of `collection`.
- *
- * @param {Array | Mixed} collection An `Array` or array-like object to convert e.g. `arguments` or `NodeList`
- * @return {Array} Naive conversion of `collection` to a new `Array`.
- * @api public
- */
-
-module.exports = function toArray(collection) {
-  if (typeof collection === 'undefined') return []
-  if (collection === null) return [null]
-  if (collection === window) return [window]
-  if (typeof collection === 'string') return [collection]
-  if (isArray(collection)) return collection
-  if (typeof collection.length != 'number') return [collection]
-  if (typeof collection === 'function' && collection instanceof Function) return [collection]
-
-  var arr = []
-  for (var i = 0; i < collection.length; i++) {
-    if (Object.prototype.hasOwnProperty.call(collection, i) || i in collection) {
-      arr.push(collection[i])
-    }
-  }
-  if (!arr.length) return []
-  return arr
-}
-
-function isArray(arr) {
-  return Object.prototype.toString.call(arr) === "[object Array]";
-}
-
-});
-
-_require.register("jaycetde~dom-contains@master", function (exports, module) {
-'use strict';
-
-var containsFn
-	, node = window.Node
-;
-
-if (node && node.prototype) {
-	if (node.prototype.contains) {
-		containsFn = node.prototype.contains;
-	} else if (node.prototype.compareDocumentPosition) {
-		containsFn = function (arg) {
-			return !!(node.prototype.compareDocumentPosition.call(this, arg) & 16);
-		};
-	}
-}
-
-if (!containsFn) {
-	containsFn = function (arg) {
-		if (arg) {
-			while ((arg = arg.parentNode)) {
-				if (arg === this) {
-					return true;
-				}
-			}
-		}
-		return false;
-	};
-}
-
-module.exports = function (a, b) {
-	var adown = a.nodeType === 9 ? a.documentElement : a
-		, bup = b && b.parentNode
-	;
-
-	return a === bup || !!(bup && bup.nodeType === 1 && containsFn.call(adown, bup));
-};
-
-});
-
-_require.register("anthonyshort~dom-walk@0.1.0", function (exports, module) {
-var array = _require("timoxley~to-array@0.2.1");
-var contains = _require("jaycetde~dom-contains@master");
-
-function walk(el, process, done, root) {
-  root = root || el;
-  var end = done || function(){};
-  var nodes = array(el.childNodes);
-
-  function next(){
-    if(nodes.length === 0) return end();
-    var nextNode = nodes.shift();
-    if(!contains(root, nextNode)) return next();
-    walk(nextNode, process, next, root);
-  }
-
-  process(el, next);
-}
-
-module.exports = walk;
-});
-
-_require.register("ripplejs~expression@0.2.0", function (exports, module) {
-var props = _require("component~props@1.1.2");
-var unique = _require("yields~uniq@master");
+_require.register("ripplejs-expression/index.js", function(exports, _require, module){
+var props = _require('props');
+var unique = _require('uniq');
 var cache = {};
 
 function Expression(str) {
@@ -905,8 +1126,7 @@ function compile(str, props){
 
 module.exports = Expression;
 });
-
-_require.register("component~format-parser@0.0.2", function (exports, module) {
+_require.register("component-format-parser/index.js", function(exports, _require, module){
 
 /**
  * Parse the given format `str`.
@@ -941,20 +1161,19 @@ function parseArgs(str) {
 	var args = [];
 	var re = /"([^"]*)"|'([^']*)'|([^ \t,]+)/g;
 	var m;
-
+	
 	while (m = re.exec(str)) {
 		args.push(m[2] || m[1] || m[0]);
 	}
-
+	
 	return args;
 }
 
 });
-
-_require.register("ripplejs~interpolate@0.4.3", function (exports, module) {
-var Expression = _require("ripplejs~expression@0.2.0");
-var parse = _require("component~format-parser@0.0.2");
-var unique = _require("yields~uniq@master");
+_require.register("ripplejs-interpolate/index.js", function(exports, _require, module){
+var Expression = _require('expression');
+var parse = _require('format-parser');
+var unique = _require('uniq');
 
 /**
  * Run a value through all filters
@@ -1164,8 +1383,7 @@ Interpolate.prototype.map = function(str, callback) {
 
 module.exports = Interpolate;
 });
-
-_require.register("ripplejs~keypath@0.0.1", function (exports, module) {
+_require.register("ripplejs-keypath/index.js", function(exports, _require, module){
 exports.get = function(obj, path) {
   var parts = path.split('.');
   var value = obj;
@@ -1189,8 +1407,7 @@ exports.set = function(obj, path, value) {
   target[last] = value;
 };
 });
-
-_require.register("jkroso~type@1.1.0", function (exports, module) {
+_require.register("jkroso-type/index.js", function(exports, _require, module){
 
 var toString = {}.toString
 var DomNode = typeof window != 'undefined'
@@ -1243,10 +1460,9 @@ var types = exports.types = {
 }
 
 });
+_require.register("jkroso-equals/index.js", function(exports, _require, module){
 
-_require.register("jkroso~equals@0.3.6", function (exports, module) {
-
-var type = _require("jkroso~type@1.1.0")
+var type = _require('type')
 
 /**
  * expose equals
@@ -1385,17 +1601,16 @@ function getEnumerableProperties (object) {
 }
 
 });
-
-_require.register("component~clone@0.2.2", function (exports, module) {
+_require.register("component-clone/index.js", function(exports, _require, module){
 /**
  * Module dependencies.
  */
 
 var type;
 try {
-  type = _require("component~type@1.0.0");
+  type = _require('component-type');
 } catch (_) {
-  type = _require("component~type@1.0.0");
+  type = _require('type');
 }
 
 /**
@@ -1446,12 +1661,11 @@ function clone(obj){
 }
 
 });
-
-_require.register("ripplejs~path-observer@0.1.2", function (exports, module) {
-var emitter = _require("component~emitter@1.1.2");
-var equals = _require("jkroso~equals@0.3.6");
-var clone = _require("component~clone@0.2.2");
-var keypath = _require("ripplejs~keypath@0.0.1");
+_require.register("ripplejs-path-observer/index.js", function(exports, _require, module){
+var emitter = _require('emitter');
+var equals = _require('equals');
+var clone = _require('clone');
+var keypath = _require('keypath');
 
 /**
  * Takes a path like ‘foo.bar.baz’ and returns
@@ -1615,437 +1829,57 @@ module.exports = function(obj) {
   return PathObserver;
 };
 });
+_require.register("component-indexof/index.js", function(exports, _require, module){
 
-_require.register("wilsonpage~fastdom@v0.8.4", function (exports, module) {
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+});
+_require.register("yields-uniq/index.js", function(exports, _require, module){
 
 /**
- * FastDom
- *
- * Eliminates layout thrashing
- * by batching DOM read/write
- * interactions.
- *
- * @author Wilson Page <wilsonpage@me.com>
+ * dependencies
  */
 
-;(function(fastdom){
+try {
+  var indexOf = _require('indexof');
+} catch(e){
+  var indexOf = _require('indexof-component');
+}
 
-  'use strict';
+/**
+ * Create duplicate free array
+ * from the provided `arr`.
+ *
+ * @param {Array} arr
+ * @param {Array} select
+ * @return {Array}
+ */
 
-  // Normalize rAF
-  var raf = window.requestAnimationFrame
-    || window.webkitRequestAnimationFrame
-    || window.mozRequestAnimationFrame
-    || window.msRequestAnimationFrame
-    || function(cb) { return window.setTimeout(cb, 1000 / 60); };
+module.exports = function (arr, select) {
+  var len = arr.length, ret = [], v;
+  select = select ? (select instanceof Array ? select : [select]) : false;
 
-  // Normalize cAF
-  var caf = window.cancelAnimationFrame
-    || window.cancelRequestAnimationFrame
-    || window.mozCancelAnimationFrame
-    || window.mozCancelRequestAnimationFrame
-    || window.webkitCancelAnimationFrame
-    || window.webkitCancelRequestAnimationFrame
-    || window.msCancelAnimationFrame
-    || window.msCancelRequestAnimationFrame
-    || function(id) { window.clearTimeout(id); };
-
-  /**
-   * Creates a fresh
-   * FastDom instance.
-   *
-   * @constructor
-   */
-  function FastDom() {
-    this.frames = [];
-    this.lastId = 0;
-
-    // Placing the rAF method
-    // on the instance allows
-    // us to replace it with
-    // a stub for testing.
-    this.raf = raf;
-
-    this.batch = {
-      hash: {},
-      read: [],
-      write: [],
-      mode: null
-    };
+  for (var i = 0; i < len; i++) {
+    v = arr[i];
+    if (select && !~indexOf(select, v)) {
+      ret.push(v);
+    } else if (!~indexOf(ret, v)) {
+      ret.push(v);
+    }
   }
-
-  /**
-   * Adds a job to the
-   * write batch and schedules
-   * a new frame if need be.
-   *
-   * @param  {Function} fn
-   * @api public
-   */
-  FastDom.prototype.read = function(fn, ctx) {
-    var job = this.add('read', fn, ctx);
-    var id = job.id;
-
-    // Add this job to the read queue
-    this.batch.read.push(job.id);
-
-    // We should *not* schedule a new frame if:
-    // 1. We're 'reading'
-    // 2. A frame is already scheduled
-    var doesntNeedFrame = this.batch.mode === 'reading'
-      || this.batch.scheduled;
-
-    // If a frame isn't needed, return
-    if (doesntNeedFrame) return id;
-
-    // Schedule a new
-    // frame, then return
-    this.scheduleBatch();
-    return id;
-  };
-
-  /**
-   * Adds a job to the
-   * write batch and schedules
-   * a new frame if need be.
-   *
-   * @param  {Function} fn
-   * @api public
-   */
-  FastDom.prototype.write = function(fn, ctx) {
-    var job = this.add('write', fn, ctx);
-    var mode = this.batch.mode;
-    var id = job.id;
-
-    // Push the job id into the queue
-    this.batch.write.push(job.id);
-
-    // We should *not* schedule a new frame if:
-    // 1. We are 'writing'
-    // 2. We are 'reading'
-    // 3. A frame is already scheduled.
-    var doesntNeedFrame = mode === 'writing'
-      || mode === 'reading'
-      || this.batch.scheduled;
-
-    // If a frame isn't needed, return
-    if (doesntNeedFrame) return id;
-
-    // Schedule a new
-    // frame, then return
-    this.scheduleBatch();
-    return id;
-  };
-
-  /**
-   * Defers the given job
-   * by the number of frames
-   * specified.
-   *
-   * If no frames are given
-   * then the job is run in
-   * the next free frame.
-   *
-   * @param  {Number}   frame
-   * @param  {Function} fn
-   * @api public
-   */
-  FastDom.prototype.defer = function(frame, fn, ctx) {
-
-    // Accepts two arguments
-    if (typeof frame === 'function') {
-      ctx = fn;
-      fn = frame;
-      frame = 1;
-    }
-
-    var self = this;
-    var index = frame - 1;
-
-    return this.schedule(index, function() {
-      self.run({
-        fn: fn,
-        ctx: ctx
-      });
-    });
-  };
-
-  /**
-   * Clears a scheduled 'read',
-   * 'write' or 'defer' job.
-   *
-   * @param  {Number} id
-   * @api public
-   */
-  FastDom.prototype.clear = function(id) {
-
-    // Defer jobs are cleared differently
-    if (typeof id === 'function') {
-      return this.clearFrame(id);
-    }
-
-    var job = this.batch.hash[id];
-    if (!job) return;
-
-    var list = this.batch[job.type];
-    var index = list.indexOf(id);
-
-    // Clear references
-    delete this.batch.hash[id];
-    if (~index) list.splice(index, 1);
-  };
-
-  /**
-   * Clears a scheduled frame.
-   *
-   * @param  {Function} frame
-   * @api private
-   */
-  FastDom.prototype.clearFrame = function(frame) {
-    var index = this.frames.indexOf(frame);
-    if (~index) this.frames.splice(index, 1);
-  };
-
-  /**
-   * Schedules a new read/write
-   * batch if one isn't pending.
-   *
-   * @api private
-   */
-  FastDom.prototype.scheduleBatch = function() {
-    var self = this;
-
-    // Schedule batch for next frame
-    this.schedule(0, function() {
-      self.batch.scheduled = false;
-      self.runBatch();
-    });
-
-    // Set flag to indicate
-    // a frame has been scheduled
-    this.batch.scheduled = true;
-  };
-
-  /**
-   * Generates a unique
-   * id for a job.
-   *
-   * @return {Number}
-   * @api private
-   */
-  FastDom.prototype.uniqueId = function() {
-    return ++this.lastId;
-  };
-
-  /**
-   * Calls each job in
-   * the list passed.
-   *
-   * If a context has been
-   * stored on the function
-   * then it is used, else the
-   * current `this` is used.
-   *
-   * @param  {Array} list
-   * @api private
-   */
-  FastDom.prototype.flush = function(list) {
-    var id;
-
-    while (id = list.shift()) {
-      this.run(this.batch.hash[id]);
-    }
-  };
-
-  /**
-   * Runs any 'read' jobs followed
-   * by any 'write' jobs.
-   *
-   * We run this inside a try catch
-   * so that if any jobs error, we
-   * are able to recover and continue
-   * to flush the batch until it's empty.
-   *
-   * @api private
-   */
-  FastDom.prototype.runBatch = function() {
-    try {
-
-      // Set the mode to 'reading',
-      // then empty all read jobs
-      this.batch.mode = 'reading';
-      this.flush(this.batch.read);
-
-      // Set the mode to 'writing'
-      // then empty all write jobs
-      this.batch.mode = 'writing';
-      this.flush(this.batch.write);
-
-      this.batch.mode = null;
-
-    } catch (e) {
-      this.runBatch();
-      throw e;
-    }
-  };
-
-  /**
-   * Adds a new job to
-   * the given batch.
-   *
-   * @param {Array}   list
-   * @param {Function} fn
-   * @param {Object}   ctx
-   * @returns {Number} id
-   * @api private
-   */
-  FastDom.prototype.add = function(type, fn, ctx) {
-    var id = this.uniqueId();
-    return this.batch.hash[id] = {
-      id: id,
-      fn: fn,
-      ctx: ctx,
-      type: type
-    };
-  };
-
-  /**
-   * Runs a given job.
-   *
-   * Applications using FastDom
-   * have the options of setting
-   * `fastdom.onError`.
-   *
-   * This will catch any
-   * errors that may throw
-   * inside callbacks, which
-   * is useful as often DOM
-   * nodes have been removed
-   * since a job was scheduled.
-   *
-   * Example:
-   *
-   *   fastdom.onError = function(e) {
-   *     // Runs when jobs error
-   *   };
-   *
-   * @param  {Object} job
-   * @api private
-   */
-  FastDom.prototype.run = function(job){
-    var ctx = job.ctx || this;
-    var fn = job.fn;
-
-    // Clear reference to the job
-    delete this.batch.hash[job.id];
-
-    // If no `onError` handler
-    // has been registered, just
-    // run the job normally.
-    if (!this.onError) {
-      return fn.call(ctx);
-    }
-
-    // If an `onError` handler
-    // has been registered, catch
-    // errors that throw inside
-    // callbacks, and run the
-    // handler instead.
-    try { fn.call(ctx); } catch (e) {
-      this.onError(e);
-    }
-  };
-
-  /**
-   * Starts of a rAF loop
-   * to empty the frame queue.
-   *
-   * @api private
-   */
-  FastDom.prototype.loop = function() {
-    var self = this;
-    var raf = this.raf;
-
-    // Don't start more than one loop
-    if (this.looping) return;
-
-    raf(function frame() {
-      var fn = self.frames.shift();
-
-      // If no more frames,
-      // stop looping
-      if (!self.frames.length) {
-        self.looping = false;
-
-      // Otherwise, schedule the
-      // next frame
-      } else {
-        raf(frame);
-      }
-
-      // Run the frame.  Note that
-      // this may throw an error
-      // in user code, but all
-      // fastdom tasks are dealt
-      // with already so the code
-      // will continue to iterate
-      if (fn) fn();
-    });
-
-    this.looping = true;
-  };
-
-  /**
-   * Adds a function to
-   * a specified index
-   * of the frame queue.
-   *
-   * @param  {Number}   index
-   * @param  {Function} fn
-   * @return {Function}
-   */
-  FastDom.prototype.schedule = function(index, fn) {
-
-    // Make sure this slot
-    // hasn't already been
-    // taken. If it has, try
-    // re-scheduling for the next slot
-    if (this.frames[index]) {
-      return this.schedule(index + 1, fn);
-    }
-
-    // Start the rAF
-    // loop to empty
-    // the frame queue
-    this.loop();
-
-    // Insert this function into
-    // the frames queue and return
-    return this.frames[index] = fn;
-  };
-
-  // We only ever want there to be
-  // one instance of FastDom in an app
-  fastdom = fastdom || new FastDom();
-
-  /**
-   * Expose 'fastdom'
-   */
-
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = fastdom;
-  } else if (typeof define === 'function' && define.amd) {
-    define(function(){ return fastdom; });
-  } else {
-    window['fastdom'] = fastdom;
-  }
-
-})(window.fastdom);
+  return ret;
+};
 
 });
-
-_require.register("ripple", function (exports, module) {
-var view = _require("ripple/lib/view.js");
+_require.register("ripple/lib/index.js", function(exports, _require, module){
+var view = _require('./view');
 
 module.exports = function(template) {
   if(template.indexOf('#') === 0 || template.indexOf('.') === 0) {
@@ -2057,12 +1891,11 @@ module.exports = function(template) {
   return view(template);
 };
 });
-
-_require.register("ripple/lib/view.js", function (exports, module) {
-var emitter = _require("component~emitter@1.1.2");
-var model = _require("ripple/lib/model.js");
-var Bindings = _require("ripple/lib/bindings.js");
-var each = _require("component~each@0.2.3");
+_require.register("ripple/lib/view.js", function(exports, _require, module){
+var emitter = _require('emitter');
+var model = _require('./model');
+var Bindings = _require('./bindings');
+var each = _require('each');
 
 /**
  * Each of the events that are called on the view
@@ -2454,10 +2287,9 @@ module.exports = function(template) {
   return View;
 };
 });
-
-_require.register("ripple/lib/bindings.js", function (exports, module) {
-var render = _require("ripple/lib/render.js");
-var Interpolator = _require("ripplejs~interpolate@0.4.3");
+_require.register("ripple/lib/bindings.js", function(exports, _require, module){
+var render = _require('./render');
+var Interpolator = _require('interpolate');
 
 /**
  * The compiler will take a set of views, an element and
@@ -2532,10 +2364,9 @@ Bindings.prototype.bind = function(view) {
 
 module.exports = Bindings;
 });
-
-_require.register("ripple/lib/model.js", function (exports, module) {
-var observer = _require("ripplejs~path-observer@0.1.2");
-var emitter = _require("component~emitter@1.1.2");
+_require.register("ripple/lib/model.js", function(exports, _require, module){
+var observer = _require('path-observer');
+var emitter = _require('emitter');
 
 module.exports = function(){
 
@@ -2635,16 +2466,15 @@ module.exports = function(){
   return Model;
 };
 });
-
-_require.register("ripple/lib/render.js", function (exports, module) {
-var walk = _require("anthonyshort~dom-walk@0.1.0");
-var each = _require("component~each@0.2.3");
-var attrs = _require("anthonyshort~attributes@0.0.1");
-var domify = _require("component~domify@1.2.2");
-var TextBinding = _require("ripple/lib/text-binding.js");
-var AttrBinding = _require("ripple/lib/attr-binding.js");
-var ChildBinding = _require("ripple/lib/child-binding.js");
-var Directive = _require("ripple/lib/directive.js");
+_require.register("ripple/lib/render.js", function(exports, _require, module){
+var walk = _require('dom-walk');
+var each = _require('each');
+var attrs = _require('attributes');
+var domify = _require('domify');
+var TextBinding = _require('./text-binding');
+var AttrBinding = _require('./attr-binding');
+var ChildBinding = _require('./child-binding');
+var Directive = _require('./directive');
 
 module.exports = function(bindings, view) {
   var el = domify(view.template);
@@ -2688,9 +2518,8 @@ module.exports = function(bindings, view) {
   return fragment.firstChild;
 };
 });
-
-_require.register("ripple/lib/directive.js", function (exports, module) {
-var dom = _require("wilsonpage~fastdom@v0.8.4");
+_require.register("ripple/lib/directive.js", function(exports, _require, module){
+var raf = _require('raf-queue');
 
 /**
  * Creates a new directive using a binding object.
@@ -2746,7 +2575,7 @@ Directive.prototype.unbind = function(){
   });
 
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
 
   if(this.binding.unbind) {
@@ -2767,16 +2596,15 @@ Directive.prototype.update = function(){
  */
 Directive.prototype.queue = function(){
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
-  this.job = dom.write(this.update.bind(this));
+  this.job = raf(this.update, this);
 };
 
 module.exports = Directive;
 });
-
-_require.register("ripple/lib/text-binding.js", function (exports, module) {
-var dom = _require("wilsonpage~fastdom@v0.8.4");
+_require.register("ripple/lib/text-binding.js", function(exports, _require, module){
+var raf = _require('raf-queue');
 
 function TextBinding(view, node) {
   this.update = this.update.bind(this);
@@ -2810,7 +2638,7 @@ TextBinding.prototype.unbind = function(){
   });
 
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
 };
 
@@ -2834,18 +2662,17 @@ TextBinding.prototype.render = function(){
 
 TextBinding.prototype.update = function(){
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
-  this.job = dom.write(this.render.bind(this));
+  this.job = raf(this.render, this);
 };
 
 module.exports = TextBinding;
 
 });
-
-_require.register("ripple/lib/attr-binding.js", function (exports, module) {
-var dom = _require("wilsonpage~fastdom@v0.8.4");
-var isBoolean = _require("anthonyshort~is-boolean-attribute@0.0.1");
+_require.register("ripple/lib/attr-binding.js", function(exports, _require, module){
+var isBoolean = _require('is-boolean-attribute');
+var raf = _require('raf-queue');
 
 /**
  * Creates a new attribute text binding for a view.
@@ -2899,7 +2726,7 @@ AttrBinding.prototype.unbind = function(){
   });
 
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
 };
 
@@ -2924,19 +2751,18 @@ AttrBinding.prototype.render = function(){
  */
 AttrBinding.prototype.update = function(){
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
-  this.job = dom.write(this.render.bind(this));
+  this.job = raf(this.render, this);
 };
 
 module.exports = AttrBinding;
 });
-
-_require.register("ripple/lib/child-binding.js", function (exports, module) {
-var attrs = _require("anthonyshort~attributes@0.0.1");
-var each = _require("component~each@0.2.3");
-var unique = _require("yields~uniq@master");
-var dom = _require("wilsonpage~fastdom@v0.8.4");
+_require.register("ripple/lib/child-binding.js", function(exports, _require, module){
+var attrs = _require('attributes');
+var each = _require('each');
+var unique = _require('uniq');
+var raf = _require('raf-queue');
 
 /**
  * Creates a new sub-view at a node and binds
@@ -3025,7 +2851,7 @@ ChildBinding.prototype.unbind = function(){
   });
 
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
 };
 
@@ -3036,20 +2862,118 @@ ChildBinding.prototype.unbind = function(){
  */
 ChildBinding.prototype.update = function(){
   if(this.job) {
-    dom.clear(this.job);
+    raf.cancel(this.job);
   }
-  this.job = dom.write(this.send.bind(this));
+  this.job = raf(this.send, this);
 };
 
 module.exports = ChildBinding;
 
 });
 
-if (typeof exports == "object") {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+_require.alias("anthonyshort-attributes/index.js", "ripple/deps/attributes/index.js");
+_require.alias("anthonyshort-attributes/index.js", "attributes/index.js");
+
+_require.alias("anthonyshort-dom-walk/index.js", "ripple/deps/dom-walk/index.js");
+_require.alias("anthonyshort-dom-walk/index.js", "ripple/deps/dom-walk/index.js");
+_require.alias("anthonyshort-dom-walk/index.js", "dom-walk/index.js");
+_require.alias("timoxley-to-array/index.js", "anthonyshort-dom-walk/deps/to-array/index.js");
+
+_require.alias("jaycetde-dom-contains/index.js", "anthonyshort-dom-walk/deps/dom-contains/index.js");
+
+_require.alias("anthonyshort-dom-walk/index.js", "anthonyshort-dom-walk/index.js");
+_require.alias("anthonyshort-is-boolean-attribute/index.js", "ripple/deps/is-boolean-attribute/index.js");
+_require.alias("anthonyshort-is-boolean-attribute/index.js", "ripple/deps/is-boolean-attribute/index.js");
+_require.alias("anthonyshort-is-boolean-attribute/index.js", "is-boolean-attribute/index.js");
+_require.alias("anthonyshort-is-boolean-attribute/index.js", "anthonyshort-is-boolean-attribute/index.js");
+_require.alias("anthonyshort-raf-queue/index.js", "ripple/deps/raf-queue/index.js");
+_require.alias("anthonyshort-raf-queue/index.js", "raf-queue/index.js");
+_require.alias("component-raf/index.js", "anthonyshort-raf-queue/deps/raf/index.js");
+
+_require.alias("component-domify/index.js", "ripple/deps/domify/index.js");
+_require.alias("component-domify/index.js", "domify/index.js");
+
+_require.alias("component-each/index.js", "ripple/deps/each/index.js");
+_require.alias("component-each/index.js", "each/index.js");
+_require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+_require.alias("component-props/index.js", "component-to-function/deps/props/index.js");
+
+_require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+_require.alias("component-emitter/index.js", "ripple/deps/emitter/index.js");
+_require.alias("component-emitter/index.js", "emitter/index.js");
+
+_require.alias("ripplejs-interpolate/index.js", "ripple/deps/interpolate/index.js");
+_require.alias("ripplejs-interpolate/index.js", "ripple/deps/interpolate/index.js");
+_require.alias("ripplejs-interpolate/index.js", "interpolate/index.js");
+_require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
+_require.alias("ripplejs-expression/index.js", "ripplejs-interpolate/deps/expression/index.js");
+_require.alias("component-props/index.js", "ripplejs-expression/deps/props/index.js");
+
+_require.alias("yields-uniq/index.js", "ripplejs-expression/deps/uniq/index.js");
+_require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
+
+_require.alias("ripplejs-expression/index.js", "ripplejs-expression/index.js");
+_require.alias("component-format-parser/index.js", "ripplejs-interpolate/deps/format-parser/index.js");
+
+_require.alias("yields-uniq/index.js", "ripplejs-interpolate/deps/uniq/index.js");
+_require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
+
+_require.alias("component-props/index.js", "ripplejs-interpolate/deps/props/index.js");
+
+_require.alias("ripplejs-interpolate/index.js", "ripplejs-interpolate/index.js");
+_require.alias("ripplejs-path-observer/index.js", "ripple/deps/path-observer/index.js");
+_require.alias("ripplejs-path-observer/index.js", "ripple/deps/path-observer/index.js");
+_require.alias("ripplejs-path-observer/index.js", "path-observer/index.js");
+_require.alias("ripplejs-keypath/index.js", "ripplejs-path-observer/deps/keypath/index.js");
+_require.alias("ripplejs-keypath/index.js", "ripplejs-path-observer/deps/keypath/index.js");
+_require.alias("ripplejs-keypath/index.js", "ripplejs-keypath/index.js");
+_require.alias("component-emitter/index.js", "ripplejs-path-observer/deps/emitter/index.js");
+
+_require.alias("jkroso-equals/index.js", "ripplejs-path-observer/deps/equals/index.js");
+_require.alias("jkroso-type/index.js", "jkroso-equals/deps/type/index.js");
+
+_require.alias("component-clone/index.js", "ripplejs-path-observer/deps/clone/index.js");
+_require.alias("component-type/index.js", "component-clone/deps/type/index.js");
+
+_require.alias("ripplejs-path-observer/index.js", "ripplejs-path-observer/index.js");
+_require.alias("yields-uniq/index.js", "ripple/deps/uniq/index.js");
+_require.alias("yields-uniq/index.js", "uniq/index.js");
+_require.alias("component-indexof/index.js", "yields-uniq/deps/indexof/index.js");
+
+_require.alias("ripple/lib/index.js", "ripple/index.js");if (typeof exports == "object") {
   module.exports = _require("ripple");
 } else if (typeof define == "function" && define.amd) {
   define([], function(){ return _require("ripple"); });
 } else {
   this["ripple"] = _require("ripple");
-}
-})()
+}})();
