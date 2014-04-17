@@ -1,7 +1,7 @@
 describe('attribute interpolation', function () {
   var assert = require('assert');
   var ripple = require('ripple');
-  var dom = require('fastdom');
+  var frame = require('raf-queue');
   var View, view, el;
 
   beforeEach(function () {
@@ -21,7 +21,7 @@ describe('attribute interpolation', function () {
   });
 
   it('should interpolate attributes', function(done){
-    dom.defer(function(){
+    frame.defer(function(){
       assert(el.id === 'bar');
       done();
     });
@@ -39,17 +39,17 @@ describe('attribute interpolation', function () {
 
   it('should update interpolated attributes', function(done){
     view.set('foo', 'baz');
-    dom.defer(function(){
+    frame.defer(function(){
       assert(el.id === 'baz');
       done();
     });
   })
 
   it('should toggle boolean attributes', function(done){
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.hasAttribute('hidden'));
       view.set('hidden', false);
-      dom.defer(function(){
+      frame.defer(function(){
         assert(view.el.hasAttribute('hidden') === false);
         done();
       });

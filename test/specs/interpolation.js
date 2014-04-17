@@ -1,7 +1,7 @@
 describe('interpolation', function(){
   var assert = require('assert');
   var ripple = require('ripple');
-  var dom = require('fastdom');
+  var frame = require('raf-queue');
   var View, view;
 
   beforeEach(function () {

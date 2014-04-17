@@ -17,12 +17,12 @@
     "anthonyshort/attributes": "*",
     "anthonyshort/dom-walk": "0.1.0",
     "anthonyshort/is-boolean-attribute": "*",
+    "anthonyshort/raf-queue": "0.2.0",
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
     "ripplejs/interpolate": "0.4.3",
     "ripplejs/path-observer": "0.1.2",
-    "wilsonpage/fastdom": "v0.8.4",
     "yields/uniq": "*"
   },
   "development": {

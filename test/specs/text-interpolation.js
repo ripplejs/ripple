@@ -1,7 +1,7 @@
 describe('text interpolation', function () {
   var assert = require('assert');
   var ripple = require('ripple');
-  var dom = require('fastdom');
+  var frame = require('raf-queue');
   var View, view, el;
 
   beforeEach(function () {
@@ -19,7 +19,7 @@ describe('text interpolation', function () {
   });
 
   it('should interpolate text nodes', function(done){
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.innerHTML === 'Ted');
       done();
     });
@@ -37,10 +37,10 @@ describe('text interpolation', function () {
 
   it('should remove the binding when the view is destroyed', function(done){
     var el = view.el;
-    dom.defer(function(){
+    frame.defer(function(){
       view.destroy();
       view.set('text', 'Barney');
-      dom.defer(function(){
+      frame.defer(function(){
         assert(el.innerHTML === "Ted");
         done();
       });
@@ -61,7 +61,7 @@ describe('text interpolation', function () {
     view.set('text', 'two');
     view.set('text', 'three');
 
-    dom.defer(function(){
+    frame.defer(function(){
       assert(count === 1);
       assert(view.el.innerHTML === 'three');
       done();
@@ -70,7 +70,7 @@ describe('text interpolation', function () {
 
   it('should update interpolated text nodes', function(done){
     view.set('text', 'Fred');
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.innerHTML === 'Fred');
       done();
     });
@@ -79,7 +79,7 @@ describe('text interpolation', function () {
   it('should handle elements as values', function(done){
     var test = document.createElement('div');
     view.set('text', test);
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.firstChild === test);
       done();
     });
@@ -89,9 +89,9 @@ describe('text interpolation', function () {
     var test = document.createElement('div');
     var test2 = document.createElement('ul');
     view.set('text', test);
-    dom.defer(function(){
+    frame.defer(function(){
       view.set('text', test2);
-      dom.defer(function(){
+      frame.defer(function(){
         assert(view.el.firstChild === test2);
         done();
       });
@@ -101,9 +101,9 @@ describe('text interpolation', function () {
   it('should handle when the value is no longer an element', function(done){
     var test = document.createElement('div');
     view.set('text', test);
-    dom.defer(function(){
+    frame.defer(function(){
       view.set('text', 'bar');
-      dom.defer(function(){
+      frame.defer(function(){
         assert(view.el.innerHTML === 'bar');
         done();
       });
@@ -112,9 +112,9 @@ describe('text interpolation', function () {
 
   it('should update from an non-string value', function(done){
     view.set('text', null);
-    dom.defer(function(){
+    frame.defer(function(){
       view.set('text', 'bar');
-      dom.defer(function(){
+      frame.defer(function(){
         assert(view.el.innerHTML === 'bar');
         done();
       });

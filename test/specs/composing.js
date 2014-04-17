@@ -2,7 +2,7 @@ describe('composing views', function () {
 
   var assert = require('assert');
   var ripple = require('ripple');
-  var dom = require('fastdom');
+  var frame = require('raf-queue');
   var child, view;
 
   beforeEach(function () {
@@ -40,7 +40,7 @@ describe('composing views', function () {
 
   it('should update data passed to the component', function (done) {
     view.set('color', 'blue');
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.getAttribute('color') === "blue");
       done();
     });
@@ -52,7 +52,7 @@ describe('composing views', function () {
     Parent.compose('child', Child);
     var view = new Parent();
     view.appendTo(document.body);
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.outerHTML === '<div>foo</div>');
       view.remove();
       done();
@@ -65,7 +65,7 @@ describe('composing views', function () {
     Parent.compose('child', Child);
     view = new Parent();
     view.appendTo(document.body);
-    dom.defer(function(){
+    frame.defer(function(){
       assert(view.el.outerHTML === '<div>child</div>');
       done();
     });
