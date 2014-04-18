@@ -1,4 +1,11 @@
 
+0.3.2 / 2014-04-16
+==================
+
+ * Using raf-queue which is a simpler version of fastdom
+ * Made requirable by browserify
+ * Added docs and examples
+
 0.3.0 / 2014-04-13
 ==================
 
