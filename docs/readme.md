@@ -23,22 +23,19 @@ Each view also has it's own compiler and there are no global plugins or API meth
 
 Views created with ripple can be exported and not even require the user to know that ripple was used at all. This is because ripple is tiny, encapsulated, and only provides the foundation to build views.
 
-## Package Managers
+## Install
+
+```js
+component install ripplejs/ripple
+```
+```js
+npm install ripplejs
+```
+
+or download the [standlone version](https://github.com/ripplejs/ripple/releases) and include it on your page. This will expose a `ripple` global variable.
 
 It's highly recommended that you use [Component](https://github.com/component/component/) when using ripple. This gives you ability to require templates as strings and easily include plugins. Ripple is built on the idea that it provides a small base for creating reactive views and then
 you extend each view with plugins.
-
-If you're using Component, you'll be requiring `ripple` in your module:
-
-```js
-var ripple = require('ripple');
-```
-
-If you're not using Component, you'll have to include the [standalone version](https://github.com/ripplejs/ripple/releases) and you'll be working with a global variable:
-
-```js
-window.ripple
-```
 
 ## Templates
 
