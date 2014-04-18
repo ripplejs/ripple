@@ -1,4 +1,4 @@
-# ripple
+# ripple.js
 
 [![Build Status](https://travis-ci.org/ripplejs/ripple.png?branch=master)](https://travis-ci.org/ripplejs/ripple)
 
