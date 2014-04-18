@@ -41,3 +41,7 @@ Supports real browsers and IE9+.
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
 * [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
 * [Iteration](http://jsfiddle.net/anthonyshort/kC45a/3/light/)
+
+## Plugins
+
+[View and add them on the wiki](https://github.com/ripplejs/ripple/wiki/Plugins) 
