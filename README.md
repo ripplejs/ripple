@@ -26,10 +26,10 @@ component install ripplejs/ripple
 ```
 
 ```js
-npm install ripplejs/ripple
+npm install ripplejs
 ```
 
-or download the [standlone version](https://raw.githubusercontent.com/ripplejs/ripple/master/dist/ripple.min.js) and include it on your page.
+or download the [standlone version](https://github.com/ripplejs/ripple/releases) and include it on your page.
 
 ## Browser Support
 
