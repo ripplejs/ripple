@@ -37,4 +37,7 @@ Supports real browsers and IE9+.
 
 ## Examples
 
-You can view some more thorough demos at [ripplejs/examples](https://github.com/ripplejs/examples).
+* [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
+* [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
+* [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
+* [Iteration](http://jsfiddle.net/anthonyshort/kC45a/3/light/)

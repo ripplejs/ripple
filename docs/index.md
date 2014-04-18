@@ -1,4 +1,4 @@
-# Introduction
+# ripple.js
 
 Ripple is a framework for writing composable components with interpolation, directives, and one-way data-binding. It's tiny, modular, extendable and has no global API.
 
