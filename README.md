@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/ripplejs/ripple.png?branch=master)](https://travis-ci.org/ripplejs/ripple)
 
 A tiny foundation for building reactive views with plugins. It aims to have a similar API to Reactive, but allow composition of views, like React.
-The major difference for other view libraries is that there are no globals used at all. Each view has it's own set of bindings and plugins. This
+The major difference for other view libraries is that there are no globals used at all. Each view has its own set of bindings and plugins. This
 makes composition of views really easy.
 
 ```js
