@@ -35,7 +35,7 @@ Each view also has it's own compiler and there are no global plugins or API meth
  * Customize features with plugins
  * ~8kb in size
  * Directives like [Reactive](https://github.com/component/reactive) and [Vue.js](http://vuejs.org)
- * Composition for re-usabe views
+ * Composition for reusable views
 
 ## Browser Support
 
