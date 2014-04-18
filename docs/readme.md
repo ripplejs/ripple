@@ -3,6 +3,19 @@
 Ripple is similar to other view libraries like React, Ractive, and Vue in that
 it handles automatically updating the DOM when the state of the view changes.
 
+```js
+var Person = ripple('<div>{{name}}</div>')
+  .use(events)
+  .use(each)
+  .use(dispatch);
+
+var person = new Person({
+  name: 'Tom'
+});
+
+person.appendTo(document.body);
+```
+
 The main difference with ripple is that it has an nice API, free from global
 objects, and can easily be extended with custom functionality. Ripple just provides the foundation, you build and customize it from there.
 
@@ -12,9 +25,7 @@ Views created with ripple can be exported and not even require the user to know 
 
 ## Package Managers
 
-It's highly recommended that you use [Component](https://github.com/component/component/) when
-using ripple. This gives you ability to require templates as strings and easily include plugins.
-Ripple is built on the idea that it provides a small base for creating reactive views and then
+It's highly recommended that you use [Component](https://github.com/component/component/) when using ripple. This gives you ability to require templates as strings and easily include plugins. Ripple is built on the idea that it provides a small base for creating reactive views and then
 you extend each view with plugins.
 
 If you're using Component, you'll be requiring `ripple` in your module:
@@ -23,8 +34,7 @@ If you're using Component, you'll be requiring `ripple` in your module:
 var ripple = require('ripple');
 ```
 
-If you're not using Component, you'll have to include the [standalone version](https://github.com/ripplejs/ripple/releases)
-and you'll be working with a global variable:
+If you're not using Component, you'll have to include the [standalone version](https://github.com/ripplejs/ripple/releases) and you'll be working with a global variable:
 
 ```js
 window.ripple
@@ -32,8 +42,7 @@ window.ripple
 
 ## Templates
 
-Templates in ripple are just plain HTML. They use special expressions within curly braces,
-a little bit like Handlebars.
+Templates in ripple are just plain HTML. They use special expressions within curly braces, a little bit like Handlebars.
 
 ```html
 <div class="{{type}}">
@@ -42,9 +51,7 @@ a little bit like Handlebars.
 </div>
 ```
 
-Within these braces you have access to properties on the view. Each view has a set of properties
-stored as a plain object that is observed for changes. For example, the above template might
-have a view with the data:
+Within these braces you have access to properties on the view. Each view has a set of properties stored as a plain object that is observed for changes. For example, the above template might have a view with the data:
 
 ```json
 {
@@ -55,12 +62,9 @@ have a view with the data:
 }
 ```
 
-When we set this object and the template on the view, they will be bound together by ripple
-and any changes you make to this data will be automatically updated in the DOM. Within the braces in
-the templates you are able to write any JavaScript you want and it will be re-rendered when data changes.
+When we set this object and the template on the view, they will be bound together by ripple and any changes you make to this data will be automatically updated in the DOM. Within the braces in the templates you are able to write any JavaScript you want and it will be re-rendered when data changes.
 
-To add templates to your views when using Component, you can just add the template to your `component.json`
-file and you are able to require it:
+To add templates to your views when using Component, you can just add the template to your `component.json` file and you are able to require it:
 
 ```json
 {
@@ -78,8 +82,7 @@ var template = require('/template.html');
 var View = ripple(template);
 ```
 
-If you're not using Component, you can add templates to your page in script tags and reference
-them using CSS selectors:
+If you're not using Component, you can add templates to your page in script tags and reference them using CSS selectors:
 
 ```html
 <script type="text/template" id="template">
