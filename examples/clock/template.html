@@ -1,0 +1,31 @@
+<div class='left'>
+  <p>
+    Today is {{ time | day }} the {{ time | date }} of {{ time | month }}. The time is:
+  </p>
+  <span class='time'>
+    <span class='hours'>{{ time.getHours() | pad }}</span>:
+    <span class='minutes'>{{ time.getMinutes() | pad }}</span>:
+    <span class='seconds'>{{ time.getSeconds() | pad }}</span>
+  </span>
+</div>
+<div class='right'>
+  <div class='square'>
+    <svg viewBox='0 0 100 100'>
+      <g transform='translate(50,50)'>
+        <circle class='clock-face' r='48'/>
+        <g each="{{ Array(60) }}">
+          <line class='major' y1='35' y2='45' transform='rotate( {{ 360 * $index / 60 }} )'/>
+        </g>
+        <g each="{{ Array(12) ">
+          <line class='minor' y1='35' y2='45' transform='rotate( {{ 360 * $index / 12 }} )'/>
+        </g>
+        <line class='hour' y1='2' y2='-20' transform='rotate( {{ 30 * time.getHours() + time.getMinutes() / 2 }} )' />
+        <line class='minute' y1='4' y2='-30' transform='rotate( {{ 6 * time.getMinutes() + time.getSeconds() / 10 }} )' />
+        <g transform='rotate( {{ 6 * time.getSeconds() }} )'>
+          <line class='second' y1='10' y2='-38'/>
+          <line class='second-counterweight' y1='10' y2='2'/>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>

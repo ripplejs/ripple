@@ -1,0 +1,9 @@
+{
+  "name": "timer",
+  "scripts": ["index.js"],
+  "dependencies": {
+    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/bind-methods": "*",
+    "ripplejs/intervals": "*"
+  }
+}

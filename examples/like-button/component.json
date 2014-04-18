@@ -1,0 +1,9 @@
+{
+  "name": "like-button",
+  "scripts": ["index.js"],
+  "templates": ["template.html"],
+  "dependencies": {
+    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/events": "*"
+  }
+}

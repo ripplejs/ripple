@@ -1,0 +1,12 @@
+{
+  "name": "markdown-editor",
+  "scripts": ["index.js"],
+  "styles": ["index.css"],
+  "templates": ["template.html"],
+  "dependencies": {
+    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/events": "*",
+    "ripplejs/markdown": "*",
+    "ripplejs/refs": "*"
+  }
+}

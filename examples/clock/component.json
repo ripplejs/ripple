@@ -1,0 +1,12 @@
+{
+  "name": "clock",
+  "scripts": ["index.js"],
+  "styles": ["index.css"],
+  "templates": ["template.html"],
+  "dependencies": {
+    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/each": "*",
+    "ripplejs/intervals": "*",
+    "ripplejs/bind-methods": "*"
+  }
+}
