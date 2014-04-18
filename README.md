@@ -31,6 +31,12 @@ npm install ripplejs
 
 or download the [standlone version](https://github.com/ripplejs/ripple/releases) and include it on your page.
 
+or via [OSSCDN by MaxCDN](http://osscdn.com/#/ripple)
+
+```html
+<script src="//oss.maxcdn.com/ripple/0.7.30/ripple-lib-min.js"></script>
+```
+
 ## Browser Support
 
 Supports real browsers and IE9+.
