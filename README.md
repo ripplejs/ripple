@@ -35,6 +35,10 @@ or download the [standlone version](https://github.com/ripplejs/ripple/releases)
 
 Supports real browsers and IE9+.
 
+## Documentation
+
+It's all on Github for now. Read [getting started](https://github.com/ripplejs/ripple/tree/master/docs);
+
 ## Examples
 
 * [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
@@ -43,5 +47,15 @@ Supports real browsers and IE9+.
 * [Iteration](http://jsfiddle.net/anthonyshort/kC45a/3/light/)
 
 ## Plugins
+
+* [events](https://github.com/ripplejs/events) - add event listeners to the DOM and call methods on the view
+* [each](https://github.com/ripplejs/each) - Basic iteration using the `each` directive.
+* [bind-methods](https://github.com/ripplejs/bind-methods) - Bind all methods on the prototype to the view
+* [markdown](https://github.com/ripplejs/markdown) - Adds a directive to render markdown using Marked.
+* [extend](https://github.com/ripplejs/extend) - Makes adding methods to the view prototype a little cleaner
+* [intervals](https://github.com/ripplejs/intervals) - Easily add and remove intervals
+* [computed](https://github.com/ripplejs/computed) - Add computed properties.
+* [refs](https://github.com/ripplejs/refs) - Easily reference elements within the template
+* [dispatch](https://github.com/ripplejs/dispatch) - Dispatch custom DOM events up the tree
 
 [View and add them on the wiki](https://github.com/ripplejs/ripple/wiki/Plugins) 
