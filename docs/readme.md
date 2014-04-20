@@ -226,11 +226,11 @@ You can use these expressions within your templates in attributes or in text:
 </div>
 ```
 
-You can also use them to pass data to [child views](/guide/composing-views).
+You can also use them to pass data to [child views](/docs/composing).
 
 Behind the scenes ripple creates attribute and text bindings for these expressions and listens for changes to the properties that are used inside of them.
 
-The expressions are called in the context of the view itself. So you have access to view methods and properties. For example, the [event plugin](https://github.com/ripplejs/events) adds an `on-click` [directive](/guide/directives.html).
+The expressions are called in the context of the view itself. So you have access to view methods and properties. For example, the [event plugin](https://github.com/ripplejs/events) adds an `on-click` [directive](/docs/directives).
 
 ```html
 <button on-click="{{ this.save }}">Save</button>
