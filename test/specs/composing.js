@@ -71,4 +71,21 @@ describe('composing views', function () {
     });
   });
 
+  it('should keep parsing the template', function (done) {
+    var Child = ripple('<div>Child</div>');
+    var Other = ripple('<div>Other</div>');
+    var Parent = ripple('<div><child></child><other></other><div test="bar"></div></div>');
+    Parent.compose('child', Child);
+    Parent.compose('other', Other);
+    Parent.directive('test', function(value){
+      assert(value === "bar");
+      done();
+    });
+    var view = new Parent();
+    view.appendTo(document.body);
+    frame.defer(function(){
+      view.remove();
+    });
+  });
+
 });
