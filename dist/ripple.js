@@ -2493,7 +2493,8 @@ module.exports = function(bindings, view) {
     else if(node.nodeType === 1) {
       var View = bindings.component(node);
       if(View) {
-        return activeBindings.push(new ChildBinding(view, node, View));
+        activeBindings.push(new ChildBinding(view, node, View));
+        return next();
       }
       each(attrs(node), function(attr){
         var binding = bindings.directive(attr);
@@ -2518,6 +2519,7 @@ module.exports = function(bindings, view) {
 
   return fragment.firstChild;
 };
+
 });
 _require.register("ripple/lib/directive.js", function(exports, _require, module){
 var raf = _require('raf-queue');
