@@ -103,7 +103,7 @@ Let's create a `View` using the `ripple` function:
 var View = ripple('<div>{{name}}</div>');
 ```
 
-This is creating a new class for this template. Each view in ripple has it's own compiler and set of bindings. This means we can safely [extend the view](/guides/plugins) with new functionality without affecting other views. This encapsulation means you can also share your created views with people not even using ripple.
+This is creating a new class for this template. Each view in ripple has it's own compiler and set of bindings. This means we can safely [extend the view](/docs/plugins) with new functionality without affecting other views. This encapsulation means you can also share your created views with people not even using ripple.
 
 You can also pass in a DOM selector or an element as a template:
 
