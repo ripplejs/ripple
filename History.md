@@ -1,4 +1,14 @@
 
+0.3.3 / 2014-04-19
+==================
+
+ * Merge pull request #11 from olivoil/master
+ * Continue walking DOM nodes after child binding
+ * Merge pull request #6 from Nami-Doc/patch-1
+ * Fix small typo
+ * Added docs on composing views
+ * Updated docs
+
 0.3.2 / 2014-04-16
 ==================
 
