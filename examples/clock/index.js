@@ -1,26 +1,21 @@
 var ripple = require('ripple');
 var each = require('each');
-var bind = require('bind-methods');
 var intervals = require('intervals');
+var bind = require('bind-methods');
 var template = require('./template.html');
+var suffixed = require('date-suffix');
+var month = require('date-month');
+var day = require('date-day');
 
-// Create a view using the pages HTML as a template
 var Clock = ripple(template)
   .use(each)
+  .use(bind)
   .use(intervals);
-
-// Set the initial state of the view
-// This is triggered before rendering
-Clock.parse(function(options){
-  return {
-    time: new Date()
-  };
-});
 
 // Hook for when the view is created. This fires
 // before the view is rendered
-Clock.on('created', function(clock){
-  clock.setInterval(clock.tick, 1000);
+Clock.created(function(){
+  this.setInterval(this.tick, 1000);
 });
 
 // Add interpolation filters
@@ -29,12 +24,12 @@ Clock.filter({
     return String( num < 10 ? '0' + num : num );
   },
   suffixedDate: function(val){
-    return suffix(val);
+    return suffixed(val);
   },
-  fullMonth: function(val){
+  month: function(val){
     return month(val).full();
   },
-  fullDay: function(){
+  day: function(val){
     return day(val).full();
   }
 });

@@ -1,12 +1,23 @@
 {
   "name": "clock",
-  "scripts": ["index.js"],
-  "styles": ["index.css"],
-  "templates": ["template.html"],
+  "scripts": [
+    "index.js"
+  ],
+  "styles": [
+    "index.css"
+  ],
+  "templates": [
+    "template.html"
+  ],
   "dependencies": {
-    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/ripple": "0.3.3",
     "ripplejs/each": "*",
     "ripplejs/intervals": "*",
-    "ripplejs/bind-methods": "*"
+    "ripplejs/bind-methods": "*",
+    "ripplejs/interpolate": "*",
+    "component/emitter": "1.1.2",
+    "anthonyshort/date-suffix": "0.0.2",
+    "anthonyshort/date-day": "*",
+    "anthonyshort/date-month": "*"
   }
 }

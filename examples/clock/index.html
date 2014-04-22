@@ -6,9 +6,15 @@
 <body>
   <script src="build/build.js"></script>
   <script>
-  var Clock = require('clock');
-  var clock = new Clock();
-  clock.appendTo('body');
+    var Clock = require('clock');
+    var clock = new Clock({
+      data: {
+        time: new Date(),
+        minutes: new Array(60),
+        hours: new Array(12),
+      }
+    });
+    clock.appendTo(document.body);
   </script>
 </body>
 </html>
