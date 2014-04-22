@@ -143,6 +143,14 @@ View.parse = functon(options){
 
 You can use this method to set the intial state of the view and set defaults. You can only add one parse function per view. The `options` passed in are whatever was passed to the constructor - `new View(options)`. By default, this just returns `options.data`.
 
+The above example would allow you to call view like this:
+
+```js
+var view = new View({
+  startTime: new Date()
+});
+```
+
 ## Working with the DOM
 
 Now that you've got your view you'll want to add it to the DOM. There are a couple of helper methods that can be used:
