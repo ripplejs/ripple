@@ -10,7 +10,9 @@ var Person = ripple('<div>{{name}}</div>')
   .use(dispatch);
 
 var person = new Person({
-  name: 'Tom'
+  data: {
+    name: 'Tom'
+  }  
 });
 
 person.appendTo(document.body);
@@ -130,18 +132,26 @@ person.appendTo(document.body);
 When creating a view it takes an options object. The important option here is
 `data`. This is the data we want to render in the template.
 
-You can change the name of this property by using `View.parse`. This lets you customize the options that can be passed into the view and where it gets the data from.
+You can change the name of this property by using `View.parse`. This lets you customize the options that can be passed into the view and where it gets the data from. Think of it like `getInitialState` in React.
 
 ```js
-View.parse(functon(options){
+View.parse = functon(options){
   return {
     size: 50,
     time: options.startTime || new Date()
   };
-});
+};
 ```
 
 You can use this method to set the intial state of the view and set defaults. You can only add one parse function per view. The `options` passed in are whatever was passed to the constructor - `new View(options)`. By default, this just returns `options.data`.
+
+The above example would allow you to call view like this:
+
+```js
+var view = new View({
+  startTime: new Date()
+});
+```
 
 ## Working with the DOM
 

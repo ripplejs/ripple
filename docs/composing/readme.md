@@ -13,7 +13,7 @@ Composing views allows you to create custom elements to reference these views. Y
 
 ```js
   var Profile = ripple(template)
-    .compose('profile-avatar', Avatar);
+    .compose('profile-avatar', Avatar)
     .compose('profile-link', Link);
 ```
 
@@ -60,3 +60,19 @@ You can also use static values if you don't need the value to change:
   <profile-avatar username="anthonyshort"></profile-avatar>
 ```
 
+You might then decide to reuse the `Profile` again within another component:
+
+```js
+var ProfileList = ripple('#list');
+ProfileList.compose('profile', Profile);
+```
+
+```html
+<div class="Profile-list">
+  <profile username="anthonyshort"></profile>
+  <profile username="ivolo"></profile>
+  <profile username="ianstormtaylor"></profile>
+</div>
+```
+
+You can see as you go further and further out you're creating a tree of views and you can update all the children by just changing the state of the parent view. This could be built out to be an entire profile page built with many small components. You could then switch the current user by just changing the `username` property on the parent.
