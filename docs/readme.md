@@ -10,9 +10,9 @@ var Person = ripple('<div>{{name}}</div>')
   .use(dispatch);
 
 var person = new Person({
-	data: {
-		name: 'Tom'
-	}  
+  data: {
+    name: 'Tom'
+  }  
 });
 
 person.appendTo(document.body);
