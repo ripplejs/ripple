@@ -44,7 +44,7 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 * [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
 * [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
-* [Iteration](http://jsfiddle.net/anthonyshort/kC45a/3/light/)
+* [Iteration](http://jsfiddle.net/chrisbuttery/4j5ZD/1/light/)
 
 ## Plugins
 
@@ -58,4 +58,4 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 * [refs](https://github.com/ripplejs/refs) - Easily reference elements within the template
 * [dispatch](https://github.com/ripplejs/dispatch) - Dispatch custom DOM events up the tree
 
-[View and add them on the wiki](https://github.com/ripplejs/ripple/wiki/Plugins) 
+[View and add them on the wiki](https://github.com/ripplejs/ripple/wiki/Plugins)
