@@ -13,7 +13,7 @@ Composing views allows you to create custom elements to reference these views. Y
 
 ```js
   var Profile = ripple(template)
-    .compose('profile-avatar', Avatar);
+    .compose('profile-avatar', Avatar)
     .compose('profile-link', Link);
 ```
 
