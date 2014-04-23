@@ -1,3 +1,9 @@
+0.3.4 / 2014-04-23
+==================
+
+ * Fixed before/after helper methods
+ * Updated examples README.md
+ * Updated clock example
 
 0.3.3 / 2014-04-19
 ==================
