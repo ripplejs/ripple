@@ -58,6 +58,25 @@ describe('mounting', function () {
     view.remove();
   });
 
+  it('should insert before an element', function(){
+    var test = document.createElement('div');
+    document.body.appendChild(test);
+    view = new View();
+    view.before(test);
+    assert( test.previousSibling === view.el );
+    view.remove();
+  });
+
+  it('should insert after an element', function(){
+    var test = document.createElement('div');
+    test.classList.add('parentEl');
+    document.body.appendChild(test);
+    view = new View();
+    view.after(".parentEl");
+    assert( test.nextSibling === view.el );
+    view.remove();
+  });
+
   it('should not unmount if not mounted', function () {
     var count = 0;
     View.on('unmounted', function(){
