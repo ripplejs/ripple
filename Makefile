@@ -46,7 +46,7 @@ patch:
 minor:
 	${BUMP} minor
 
-release: build standalone
+release: test standalone
 	VERSION=`node -p "require('./component.json').version"` && \
 	git changelog --tag $$VERSION && \
 	git release $$VERSION
