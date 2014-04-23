@@ -40,10 +40,14 @@ test: lint build
 
 ci: test
 
-patch: build standalone
+patch:
 	${BUMP} patch
 
-release: build standalone
-	${BUMP} minor
+release:
+	${BUMP} patch
+	git changelog
+	VERSION=`node -p "require('./component.json').version"`
+	git release $VERSION
+	npm publish
 
 .PHONY: clean test karma patch release standalone
