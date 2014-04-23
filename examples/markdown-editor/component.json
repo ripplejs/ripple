@@ -4,7 +4,7 @@
   "styles": ["index.css"],
   "templates": ["template.html"],
   "dependencies": {
-    "ripplejs/ripple": "~0.3.0",
+    "ripplejs/ripple": "0.3.4",
     "ripplejs/events": "*",
     "ripplejs/markdown": "*",
     "ripplejs/refs": "*"
