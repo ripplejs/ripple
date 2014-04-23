@@ -43,11 +43,13 @@ ci: test
 patch:
 	${BUMP} patch
 
-release:
-	${BUMP} patch
-	git changelog
-	VERSION=`node -p "require('./component.json').version"`
-	git release $VERSION
+minor:
+	${BUMP} minor
+
+release: build standalone
+	VERSION=`node -p "require('./component.json').version"` && \
+	git changelog --tag $$VERSION && \
+	git release $$VERSION
 	npm publish
 
 .PHONY: clean test karma patch release standalone
