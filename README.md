@@ -41,6 +41,7 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 
 ## Examples
 
+* [Clock](http://jsfiddle.net/chrisbuttery/QnHPj/2/)
 * [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
 * [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
