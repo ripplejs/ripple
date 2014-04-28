@@ -51,11 +51,15 @@ describe('View', function(){
   });
 
   it('should have different bindings for each view', function () {
-    var One = ripple('<div></div>');
-    var Two = ripple('<div></div>');
+    var i = 0;
+    var One = ripple('<div foo="bar"></div>');
+    One.directive('foo', function(val){
+      i++;
+    });
+    var Two = ripple('<div foo="bar"></div>');
     var one = new One();
     var two = new Two();
-    assert(one.bindings !== two.bindings);
+    assert(i === 1);
   });
 
   it('should have the same bindings for each instance', function () {
@@ -69,6 +73,32 @@ describe('View', function(){
       template: '<ul></ul>'
     });
     assert(view.el.outerHTML === '<ul></ul>');
+  });
+
+  describe('creating child views', function () {
+
+    beforeEach(function () {
+      View = ripple('<div></div>');
+    });
+
+    it('should create child views with the same bindings', function (done) {
+      View.directive('foo', function(val){
+        assert(val === 'bar');
+        done();
+      });
+      var Child = View.create('<div foo="bar"></div>');
+      new Child();
+    });
+
+    it('should not have the same lifecycle events', function (done) {
+      View.created(function(val){
+        done(false);
+      });
+      var Child = View.create('<div foo="bar"></div>');
+      new Child();
+      done();
+    });
+
   });
 
 })
