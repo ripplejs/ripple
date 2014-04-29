@@ -1,4 +1,12 @@
 
+0.4.0 / 2014-04-29
+==================
+
+ * Allow watching for all changes
+ * Using an updated/simplified path observer
+ * Added .create method for creating child views with the same bindings
+ * Moved `render` into the view so it can be modified by plugins. eg. virtual dom
+
 0.3.5 / 2014-04-23
 ==================
 

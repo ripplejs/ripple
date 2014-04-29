@@ -308,6 +308,7 @@ function walk(el, process, done, root) {
 }
 
 module.exports = walk;
+
 });
 _require.register("anthonyshort-is-boolean-attribute/index.js", function(exports, _require, module){
 
@@ -1407,284 +1408,11 @@ exports.set = function(obj, path, value) {
   target[last] = value;
 };
 });
-_require.register("jkroso-type/index.js", function(exports, _require, module){
-
-var toString = {}.toString
-var DomNode = typeof window != 'undefined'
-  ? window.Node
-  : Function
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = exports = function(x){
-  var type = typeof x
-  if (type != 'object') return type
-  type = types[toString.call(x)]
-  if (type) return type
-  if (x instanceof DomNode) switch (x.nodeType) {
-    case 1:  return 'element'
-    case 3:  return 'text-node'
-    case 9:  return 'document'
-    case 11: return 'document-fragment'
-    default: return 'dom-node'
-  }
-}
-
-var types = exports.types = {
-  '[object Function]': 'function',
-  '[object Date]': 'date',
-  '[object RegExp]': 'regexp',
-  '[object Arguments]': 'arguments',
-  '[object Array]': 'array',
-  '[object String]': 'string',
-  '[object Null]': 'null',
-  '[object Undefined]': 'undefined',
-  '[object Number]': 'number',
-  '[object Boolean]': 'boolean',
-  '[object Object]': 'object',
-  '[object Text]': 'text-node',
-  '[object Uint8Array]': 'bit-array',
-  '[object Uint16Array]': 'bit-array',
-  '[object Uint32Array]': 'bit-array',
-  '[object Uint8ClampedArray]': 'bit-array',
-  '[object Error]': 'error',
-  '[object FormData]': 'form-data',
-  '[object File]': 'file',
-  '[object Blob]': 'blob'
-}
-
-});
-_require.register("jkroso-equals/index.js", function(exports, _require, module){
-
-var type = _require('type')
-
-/**
- * expose equals
- */
-
-module.exports = equals
-equals.compare = compare
-
-/**
- * assert all values are equal
- *
- * @param {Any} [...]
- * @return {Boolean}
- */
-
- function equals(){
-  var i = arguments.length - 1
-  while (i > 0) {
-    if (!compare(arguments[i], arguments[--i])) return false
-  }
-  return true
-}
-
-// (any, any, [array]) -> boolean
-function compare(a, b, memos){
-  // All identical values are equivalent
-  if (a === b) return true
-  var fnA = types[type(a)]
-  var fnB = types[type(b)]
-  return fnA && fnA === fnB
-    ? fnA(a, b, memos)
-    : false
-}
-
-var types = {}
-
-// (Number) -> boolean
-types.number = function(a){
-  // NaN check
-  return a !== a
-}
-
-// (function, function, array) -> boolean
-types['function'] = function(a, b, memos){
-  return a.toString() === b.toString()
-    // Functions can act as objects
-    && types.object(a, b, memos)
-    && compare(a.prototype, b.prototype)
-}
-
-// (date, date) -> boolean
-types.date = function(a, b){
-  return +a === +b
-}
-
-// (regexp, regexp) -> boolean
-types.regexp = function(a, b){
-  return a.toString() === b.toString()
-}
-
-// (DOMElement, DOMElement) -> boolean
-types.element = function(a, b){
-  return a.outerHTML === b.outerHTML
-}
-
-// (textnode, textnode) -> boolean
-types.textnode = function(a, b){
-  return a.textContent === b.textContent
-}
-
-// decorate `fn` to prevent it re-checking objects
-// (function) -> function
-function memoGaurd(fn){
-  return function(a, b, memos){
-    if (!memos) return fn(a, b, [])
-    var i = memos.length, memo
-    while (memo = memos[--i]) {
-      if (memo[0] === a && memo[1] === b) return true
-    }
-    return fn(a, b, memos)
-  }
-}
-
-types['arguments'] =
-types.array = memoGaurd(compareArrays)
-
-// (array, array, array) -> boolean
-function compareArrays(a, b, memos){
-  var i = a.length
-  if (i !== b.length) return false
-  memos.push([a, b])
-  while (i--) {
-    if (!compare(a[i], b[i], memos)) return false
-  }
-  return true
-}
-
-types.object = memoGaurd(compareObjects)
-
-// (object, object, array) -> boolean
-function compareObjects(a, b, memos) {
-  var ka = getEnumerableProperties(a)
-  var kb = getEnumerableProperties(b)
-  var i = ka.length
-
-  // same number of properties
-  if (i !== kb.length) return false
-
-  // although not necessarily the same order
-  ka.sort()
-  kb.sort()
-
-  // cheap key test
-  while (i--) if (ka[i] !== kb[i]) return false
-
-  // remember
-  memos.push([a, b])
-
-  // iterate again this time doing a thorough check
-  i = ka.length
-  while (i--) {
-    var key = ka[i]
-    if (!compare(a[key], b[key], memos)) return false
-  }
-
-  return true
-}
-
-// (object) -> array
-function getEnumerableProperties (object) {
-  var result = []
-  for (var k in object) if (k !== 'constructor') {
-    result.push(k)
-  }
-  return result
-}
-
-});
-_require.register("component-clone/index.js", function(exports, _require, module){
-/**
- * Module dependencies.
- */
-
-var type;
-try {
-  type = _require('component-type');
-} catch (_) {
-  type = _require('type');
-}
-
-/**
- * Module exports.
- */
-
-module.exports = clone;
-
-/**
- * Clones objects.
- *
- * @param {Mixed} any object
- * @api public
- */
-
-function clone(obj){
-  switch (type(obj)) {
-    case 'object':
-      var copy = {};
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          copy[key] = clone(obj[key]);
-        }
-      }
-      return copy;
-
-    case 'array':
-      var copy = new Array(obj.length);
-      for (var i = 0, l = obj.length; i < l; i++) {
-        copy[i] = clone(obj[i]);
-      }
-      return copy;
-
-    case 'regexp':
-      // from millermedeiros/amd-utils - MIT
-      var flags = '';
-      flags += obj.multiline ? 'm' : '';
-      flags += obj.global ? 'g' : '';
-      flags += obj.ignoreCase ? 'i' : '';
-      return new RegExp(obj.source, flags);
-
-    case 'date':
-      return new Date(obj.getTime());
-
-    default: // string, number, boolean, …
-      return obj;
-  }
-}
-
-});
 _require.register("ripplejs-path-observer/index.js", function(exports, _require, module){
 var emitter = _require('emitter');
-var equals = _require('equals');
-var clone = _require('clone');
 var keypath = _require('keypath');
-
-/**
- * Takes a path like ‘foo.bar.baz’ and returns
- * an array we can iterate over for all parts.
- * eg. [‘foo’, ‘foo.bar’, ‘foo.bar.baz’]
- *
- * @param {String} key
- *
- * @return {Array}
- */
-function resolvePaths(key) {
-  var used = [];
-  var paths = key.split('.').map(function(path){
-    used.push(path);
-    return used.join('.');
-  });
-  paths.pop();
-  return paths;
-}
+var type = _require('type');
+var raf = _require('raf-queue');
 
 module.exports = function(obj) {
 
@@ -1706,52 +1434,55 @@ module.exports = function(obj) {
   function PathObserver(path) {
     if(!(this instanceof PathObserver)) return new PathObserver(path);
     if(cache[path]) return cache[path];
-
     this.path = path;
-    this.paths = resolvePaths(path);
-    this.previous = clone(this.get());
-    this.check();
-
-    // Whenever a parent path changes we should
-    // check to see if this path has changed
-    this.changes = this.paths.map(function(name){
-      var observer = new PathObserver(name);
-      return observer.change(this.check.bind(this));
-    }, this);
-
+    Object.defineProperty(this, 'value', {
+      get: function() {
+        return keypath.get(obj, this.path);
+      },
+      set: function(val) {
+        keypath.set(obj, this.path, val);
+      }
+    });
     cache[path] = this;
   }
 
   /**
    * Remove all path observers
    */
-  PathObserver.dispose = function(){
+  PathObserver.dispose = function() {
     for(var path in cache) {
       cache[path].dispose();
     }
+    this.off();
+  };
+
+  /**
+   * Emit a change event next tick
+   */
+  PathObserver.change = function() {
+    raf.once(this.notify, this);
+  };
+
+  /**
+   * Notify observers of a change
+   */
+  PathObserver.notify = function() {
+    this.emit('change');
   };
 
   /**
    * Mixin
    */
+  emitter(PathObserver);
   emitter(PathObserver.prototype);
 
   /**
-   * Has the path changed?
-   *
-   * @return {Boolean}
-   */
-  PathObserver.prototype.dirty = function() {
-    return equals(this.previous, this.get()) === false;
-  };
-
-  /**
-   * Get the value of the path
+   * Get the value of the path.
    *
    * @return {Mixed}
    */
-  PathObserver.prototype.get = function(){
-    return keypath.get(obj, this.path);
+  PathObserver.prototype.get = function() {
+    return this.value;
   };
 
   /**
@@ -1760,42 +1491,30 @@ module.exports = function(obj) {
    * @return {PathObserver}
    */
   PathObserver.prototype.set = function(val) {
-    keypath.set(obj, this.path, val);
-    this.check(); // This will be automatic with object.observe
+    var current = this.value;
+
+    if (type(val) === 'object') {
+      var changes = 0;
+      for (var key in val) {
+        var path = new PathObserver(this.path + '.' + key);
+        path.once('change', function(){
+          changes += 1;
+        });
+        path.set(val[key]);
+      }
+      if (changes > 0) {
+        this.emit('change', this.value, current);
+      }
+      return;
+    }
+
+    // no change
+    if(current === val) return this;
+
+    this.value = val;
+    this.emit('change', this.value, current);
+    PathObserver.change();
     return this;
-  };
-
-  /**
-   * Announce changes. It won't do anything
-   * if the value hasn't actually changed
-   *
-   * @param {Mixed} value
-   *
-   * @api public
-   * @return {void}
-   */
-  PathObserver.prototype.check = function() {
-    var current = this.get();
-    var previous = this.previous;
-    if(!this.dirty()) return;
-    this.previous = clone(current);
-    this.notify(current, previous);
-  };
-
-  /**
-   * Emits the change event that triggers callback
-   * events in object watching for changes
-   *
-   * @api public
-   * @return {void}
-   */
-  PathObserver.prototype.notify = function() {
-    var args = Array.prototype.slice.call(arguments);
-    args.unshift('change');
-    this.emit.apply(this, args);
-    this.paths.forEach(function(name){
-      if(cache[name]) cache[name].check();
-    });
   };
 
   /**
@@ -1817,13 +1536,8 @@ module.exports = function(obj) {
    * Clean up and remove all event bindings
    */
   PathObserver.prototype.dispose = function(){
-    this.emit('dispose');
     this.off('change');
-    this.previous = null;
-    this.changes.forEach(function(unbind){
-      unbind();
-    });
-    cache[this.path] = null;
+    delete cache[this.path];
   };
 
   return PathObserver;
@@ -1893,9 +1607,10 @@ module.exports = function(template) {
 });
 _require.register("ripple/lib/view.js", function(exports, _require, module){
 var emitter = _require('emitter');
+var each = _require('each');
 var model = _require('./model');
 var Bindings = _require('./bindings');
-var each = _require('each');
+var render = _require('./render');
 
 /**
  * Each of the events that are called on the view
@@ -1929,23 +1644,15 @@ function getNode(node) {
   return node;
 }
 
-module.exports = function(template) {
+/**
+ * Create a new view from a template string
+ *
+ * @param {String} template
+ *
+ * @return {View}
+ */
 
-  /**
-   * Stores all of the directives, views,
-   * filters etc. that we might want to share
-   * between views.
-   *
-   * @type {Bindings}
-   */
-  var bindings = new Bindings();
-
-  /**
-   * Stores the state of the view.
-   *
-   * @type {Function}
-   */
-  var Model = model();
+function createView(template) {
 
   /**
    * The view controls the lifecycle of the
@@ -1953,14 +1660,14 @@ module.exports = function(template) {
    * Each element can only have one view and
    * each view can only have one element.
    */
+
   function View(options) {
     options = options || {};
     View.emit('construct', this, [options]);
     this.options = options;
     this.children = [];
-    this.template = options.template || template;
     this.owner = options.owner;
-    this.bindings = options.bindings || bindings;
+    this.template = options.template || template;
     this.root = this;
     if (this.owner) {
       this.owner.children.push(this);
@@ -1968,7 +1675,7 @@ module.exports = function(template) {
     }
     this.scope = options.scope;
     this.scopeWatchers = {};
-    this.model = new Model(View.parse(options));
+    this.model = new View.Model(View.parse(options));
     this.data = this.model.props;
     View.emit('created', this);
     this.el = this.render();
@@ -1978,8 +1685,27 @@ module.exports = function(template) {
   /**
    * Mixins
    */
+
   emitter(View);
   emitter(View.prototype);
+
+  /**
+   * Stores all of the directives, views,
+   * filters etc. that we might want to share
+   * between views.
+   *
+   * @type {Bindings}
+   */
+
+  View.bindings = new Bindings();
+
+  /**
+   * Stores the state of the view.
+   *
+   * @type {Function}
+   */
+
+  View.Model = model();
 
   /**
    * Add a directive
@@ -1989,8 +1715,9 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.directive = function(match, fn) {
-    bindings.directive(match, fn);
+    this.bindings.directive(match, fn);
     return this;
   };
 
@@ -2002,8 +1729,9 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.compose = function(name, Child) {
-    bindings.component(name, Child);
+    this.bindings.component(name, Child);
     return this;
   };
 
@@ -2015,6 +1743,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.filter = function(name, fn) {
     if (typeof name !== 'string') {
       for(var key in name) {
@@ -2022,7 +1751,7 @@ module.exports = function(template) {
       }
       return;
     }
-    bindings.filter(name, fn);
+    this.bindings.filter(name, fn);
     return this;
   };
 
@@ -2031,14 +1760,31 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.use = function(fn, options) {
     fn(View, options);
     return this;
   };
 
   /**
+   * Create a new view from a template that shares
+   * all of the same Bindings
+   *
+   * @param {String} template
+   *
+   * @return {View}
+   */
+
+  View.create = function(template) {
+    var Child = createView(template);
+    Child.bindings = this.bindings;
+    return Child;
+  };
+
+  /**
    * Create helper methods for binding to events
    */
+
   lifecycleEvents.forEach(function(name) {
     View[name] = function(fn){
       View.on(name, function(view, args){
@@ -2050,6 +1796,7 @@ module.exports = function(template) {
   /**
    * Parse the options for the initial data
    */
+
   View.parse = function(options) {
     return options.data;
   };
@@ -2063,6 +1810,7 @@ module.exports = function(template) {
    *
    * @param {Object} obj
    */
+
   View.prototype.set = function(key, value) {
     if ( typeof key !== 'string' ) {
       for(var name in key) this.set(name, key[name]);
@@ -2085,6 +1833,7 @@ module.exports = function(template) {
    *
    * @param {String} key
    */
+
   View.prototype.get = function(key) {
     var value = this.model.get(key);
     if (value === undefined && this.scope) {
@@ -2094,8 +1843,21 @@ module.exports = function(template) {
   };
 
   /**
+   * Get all the properties used in a string
+   *
+   * @param {String} str
+   *
+   * @return {Array}
+   */
+
+  View.prototype.props = function(str) {
+    return View.bindings.interpolator.props(str);
+  };
+
+  /**
    * Remove the element from the DOM
    */
+
   View.prototype.destroy = function() {
     var self = this;
     this.emit('destroying');
@@ -2130,6 +1892,7 @@ module.exports = function(template) {
    *
    * @return {Boolean}
    */
+
   View.prototype.isMounted = function() {
     return this.el != null && this.el.parentNode != null;
   };
@@ -2138,8 +1901,13 @@ module.exports = function(template) {
    * Render the view to an element. This should
    * only ever render the element once.
    */
+
   View.prototype.render = function() {
-    return this.bindings.bind(this);
+    return render({
+      view: this,
+      template: this.template,
+      bindings: View.bindings
+    });
   };
 
   /**
@@ -2149,6 +1917,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.prototype.appendTo = function(node) {
     getNode(node).appendChild(this.el);
     this.emit('mounted');
@@ -2163,6 +1932,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.prototype.replace = function(node) {
     var target = getNode(node);
     target.parentNode.replaceChild(this.el, target);
@@ -2178,6 +1948,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.prototype.before = function(node) {
     var target = getNode(node);
     target.parentNode.insertBefore(this.el, target);
@@ -2193,6 +1964,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.prototype.after = function(node) {
     var target = getNode(node);
     target.parentNode.insertBefore(this.el, target.nextSibling);
@@ -2206,6 +1978,7 @@ module.exports = function(template) {
    *
    * @return {View}
    */
+
   View.prototype.remove = function() {
     if (this.isMounted() === false) return this;
     this.el.parentNode.removeChild(this.el);
@@ -2219,14 +1992,15 @@ module.exports = function(template) {
    *
    * @param {String} str
    */
+
   View.prototype.interpolate = function(str) {
     var self = this;
     var data = {};
-    var props = this.bindings.interpolator.props(str);
+    var props = this.props(str);
     props.forEach(function(prop){
       data[prop] = self.get(prop);
     });
-    return this.bindings.interpolator.value(str, {
+    return View.bindings.interpolator.value(str, {
       context: this.scope || this,
       scope: data
     });
@@ -2238,6 +2012,7 @@ module.exports = function(template) {
    * @param {Strign} prop
    * @param {Function} callback
    */
+
   View.prototype.watch = function(prop, callback) {
     var self = this;
     if (Array.isArray(prop)) {
@@ -2263,6 +2038,7 @@ module.exports = function(template) {
    * @param {Strign} prop
    * @param {Function} callback
    */
+
   View.prototype.unwatch = function(prop, callback) {
     var self = this;
     if (Array.isArray(prop)) {
@@ -2282,10 +2058,16 @@ module.exports = function(template) {
   };
 
   return View;
-};
+}
+
+
+/**
+ * Exports
+ */
+
+module.exports = createView;
 });
 _require.register("ripple/lib/bindings.js", function(exports, _require, module){
-var render = _require('./render');
 var Interpolator = _require('interpolate');
 
 /**
@@ -2348,17 +2130,6 @@ Bindings.prototype.filter = function(name, fn) {
   return this;
 };
 
-/**
- * Render a template and a view
- *
- * @param {View} view
- *
- * @return {Element}
- */
-Bindings.prototype.bind = function(view) {
-  return render(this, view);
-};
-
 module.exports = Bindings;
 });
 _require.register("ripple/lib/model.js", function(exports, _require, module){
@@ -2408,7 +2179,13 @@ module.exports = function(){
    * @return {Model}
    */
   Model.prototype.watch = function(key, callback) {
-    this.observer(key).on('change', callback);
+    if(arguments.length === 1) {
+      callback = key;
+      this.observer.on('change', callback);
+    }
+    else {
+      this.observer(key).on('change', callback);
+    }
     return this;
   };
 
@@ -2421,7 +2198,13 @@ module.exports = function(){
    * @return {Model}
    */
   Model.prototype.unwatch = function(key, callback) {
-    this.observer(key).off('change', callback);
+    if(arguments.length === 1) {
+      callback = key;
+      this.observer.off('change', callback);
+    }
+    else {
+      this.observer(key).off('change', callback);
+    }
     return this;
   };
 
@@ -2473,8 +2256,10 @@ var AttrBinding = _require('./attr-binding');
 var ChildBinding = _require('./child-binding');
 var Directive = _require('./directive');
 
-module.exports = function(bindings, view) {
-  var el = domify(view.template);
+module.exports = function(options) {
+  var view = options.view;
+  var bindings = options.bindings;
+  var el = domify(options.template);
   var fragment = document.createDocumentFragment();
   fragment.appendChild(el);
 
@@ -2540,7 +2325,7 @@ function Directive(view, node, attr, binding) {
   this.text = node.getAttribute(attr);
   this.node = node;
   this.attr = attr;
-  this.props = view.bindings.interpolator.props(this.text);
+  this.props = view.props(this.text);
   this.bind();
 }
 
@@ -2610,7 +2395,7 @@ function TextBinding(view, node) {
   this.view = view;
   this.text = node.data;
   this.node = node;
-  this.props = view.bindings.interpolator.props(this.text);
+  this.props = view.props(this.text);
   this.render = this.render.bind(this);
   if(this.props.length) {
     this.bind();
@@ -2693,7 +2478,7 @@ function AttrBinding(view, node, attr) {
   this.text = node.getAttribute(attr);
   this.node = node;
   this.attr = attr;
-  this.props = view.bindings.interpolator.props(this.text);
+  this.props = view.props(this.text);
   this.bind();
 }
 
@@ -2795,9 +2580,9 @@ function ChildBinding(view, node, View) {
  */
 ChildBinding.prototype.getProps = function(){
   var ret = [];
-  var interpolator = this.view.bindings.interpolator;
+  var view = this.view;
   each(this.attrs, function(name, value){
-    ret = ret.concat(interpolator.props(value));
+    ret = ret.concat(view.props(value));
   });
   return unique(ret);
 };
@@ -2895,10 +2680,6 @@ module.exports = ChildBinding;
 
 
 
-
-
-
-
 _require.alias("anthonyshort-attributes/index.js", "ripple/deps/attributes/index.js");
 _require.alias("anthonyshort-attributes/index.js", "attributes/index.js");
 
@@ -2958,11 +2739,10 @@ _require.alias("ripplejs-keypath/index.js", "ripplejs-path-observer/deps/keypath
 _require.alias("ripplejs-keypath/index.js", "ripplejs-keypath/index.js");
 _require.alias("component-emitter/index.js", "ripplejs-path-observer/deps/emitter/index.js");
 
-_require.alias("jkroso-equals/index.js", "ripplejs-path-observer/deps/equals/index.js");
-_require.alias("jkroso-type/index.js", "jkroso-equals/deps/type/index.js");
+_require.alias("component-type/index.js", "ripplejs-path-observer/deps/type/index.js");
 
-_require.alias("component-clone/index.js", "ripplejs-path-observer/deps/clone/index.js");
-_require.alias("component-type/index.js", "component-clone/deps/type/index.js");
+_require.alias("anthonyshort-raf-queue/index.js", "ripplejs-path-observer/deps/raf-queue/index.js");
+_require.alias("component-raf/index.js", "anthonyshort-raf-queue/deps/raf/index.js");
 
 _require.alias("ripplejs-path-observer/index.js", "ripplejs-path-observer/index.js");
 _require.alias("yields-uniq/index.js", "ripple/deps/uniq/index.js");
