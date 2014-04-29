@@ -95,14 +95,25 @@ describe('watching', function(){
       view.set('foo.bar', 'zab');
     })
 
-    it('should emit events in the middle', function(){
+    it('should not emit events in the middle', function(){
       var called = false;
       view.watch('foo', function(val){
         called = true;
       });
       view.set('foo.bar', 'zab');
-      assert(called === true);
+      assert(called === false);
     })
+
+    it('should emit when setting an object in the middle', function () {
+      var called = false;
+      view.watch('foo', function(val){
+        called = true;
+      });
+      view.set('foo', {
+        bar: 'zab'
+      });
+      assert(called === true);
+    });
 
     it('should not emit events if the value has not changed', function(){
       var called = 0;
