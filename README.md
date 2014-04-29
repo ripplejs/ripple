@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/ripplejs/ripple.png?branch=master)](https://travis-ci.org/ripplejs/ripple)
 
-A tiny foundation for building reactive views with plugins. It aims to have a similar API to Reactive, but allow composition of views, like React.
+A tiny foundation for building reactive views with plugins. It aims to have a similar API to [Reactive](https://github.com/component/reactive), but allow composition of views, like [React](http://facebook.github.io/react/).
 The major difference for other view libraries is that there are no globals used at all. Each view has its own set of bindings and plugins. This
 makes composition of views really easy.
 
@@ -13,7 +13,9 @@ var Person = ripple('<div>{{name}}</div>')
   .use(dispatch);
 
 var person = new Person({
-  name: 'Tom'
+  data: {
+    name: 'Tom'
+  }
 });
 
 person.appendTo(document.body);
@@ -41,6 +43,7 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 
 ## Examples
 
+* [Clock](http://jsfiddle.net/chrisbuttery/QnHPj/3/)
 * [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
 * [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)

@@ -5,7 +5,7 @@ Directives are custom attributes that a hooks for special functionality. If you'
 You can define your own directives that can easily be re-used across views. A directive looks like this:
 
 ```html
-<button <mark>on-click="save"</mark>Submit</button>
+<button on-click="save">Submit</button>
 ```
 
 This isn't a real attribute, it's a custom one that will trigger some functionality added to the `View`.
