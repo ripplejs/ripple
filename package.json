@@ -14,7 +14,7 @@
     "karma-safari-launcher": "~0.1.1",
     "mocha-phantomjs": "~3.3.2",
     "jshint": "~2.4.4",
-    "component": "~0.19.7",
+    "component": "0.19.9",
     "bump": "git://github.com/ianstormtaylor/bump",
     "minify": "~0.2.6",
     "bfc": "~0.1.0"

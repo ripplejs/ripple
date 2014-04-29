@@ -22,7 +22,7 @@
     "component/each": "*",
     "component/emitter": "*",
     "ripplejs/interpolate": "0.4.3",
-    "ripplejs/path-observer": "recursive-arrays",
+    "ripplejs/path-observer": "0.2.0",
     "yields/uniq": "*"
   },
   "development": {

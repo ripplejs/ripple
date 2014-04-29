@@ -44,14 +44,22 @@ describe('watching', function(){
     view.set('one', 1);
   })
 
-  if('should bind to all changes', function(done){
+  if('should watch all changes', function(done){
     view = new View();
-    view.watch(function(attr, value){
-      assert(attr === 'one');
-      assert(value === 1);
+    view.watch(function(){
       done();
     });
     view.set('one', 1);
+  });
+
+  if('should unwatch all changes', function(done){
+    view = new View();
+    view.watch(function change(){
+      done(false);
+    });
+    view.unwatch(change);
+    view.set('one', 1);
+    done();
   });
 
   it('should bind to changes of multiple properties', function(){
