@@ -138,7 +138,7 @@ You can change the name of this property by using `View.parse`. This lets you cu
 View.parse = function(options){
   return {
     size: 50,
-    time: options.data.startTime || new Date()
+    time: options.startTime || new Date()
   };
 };
 ```
