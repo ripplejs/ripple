@@ -135,7 +135,7 @@ When creating a view it takes an options object. The important option here is
 You can change the name of this property by using `View.parse`. This lets you customize the options that can be passed into the view and where it gets the data from. Think of it like `getInitialState` in React.
 
 ```js
-View.parse = functon(options){
+View.parse = function(options){
   return {
     size: 50,
     time: options.startTime || new Date()
