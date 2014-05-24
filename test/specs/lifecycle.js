@@ -1,9 +1,11 @@
 describe('lifecycle events', function () {
   var ripple = require('ripple');
   var assert = require('assert');
+  var frame = require('raf-queue');
 
   beforeEach(function () {
-    View = ripple('<div></div>');
+    Child = ripple('<div></div>');
+    View = ripple('<div><child></child></div>').compose('child', Child);
   });
 
   it('should fire a construct event', function (done) {
@@ -63,6 +65,29 @@ describe('lifecycle events', function () {
       .remove();
   });
 
+  it('should fire the mounted event on its children', function(done) {
+    var counter = 0;
+    Child.once('mounted', function(view) {
+      var viewChild = view;
+      Child.once('mounted', function(view) {
+        assert(view === viewChild);
+      });
+    });
+
+    Child.on('mounted', function() {
+      counter++;
+    });
+
+    var view = new View();
+    view.appendTo(document.body).remove();
+    view.appendTo(document.body).remove();
+
+    frame.defer(function() {
+      assert(counter === 2);
+      done();
+    });
+  });
+
   it('should have a mounted method', function (done) {
     View.mounted(function(){
       assert( this instanceof View );
@@ -80,6 +105,16 @@ describe('lifecycle events', function () {
     new View()
       .appendTo(document.body)
       .remove();
+  });
+
+  it('should fire the unmounted event on its children', function(done) {
+    Child.on('unmounted', function(view) {
+      assert(view instanceof Child);
+      done();
+    });
+
+    var view = new View();
+    view.appendTo(document.body).remove();
   });
 
   it('should have an unmounted method', function (done) {
@@ -108,5 +143,4 @@ describe('lifecycle events', function () {
     new View()
       .destroy();
   });
-
 });
