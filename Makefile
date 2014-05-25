@@ -21,7 +21,7 @@ minify: build
 	${MINIFY} build/build.js build/build.min.js
 
 karma: build
-	${KARMA} start --no-auto-watch --single-run
+	${KARMA} start test/karma.conf.js --no-auto-watch --single-run
 
 lint: node_modules
 	${JSHINT} lib/*.js

@@ -33,7 +33,7 @@ Supports real browsers and IE9+.
 
 ## Documentation
 
-It's all on Github for now. Read [getting started](https://github.com/ripplejs/ripple/tree/master/docs);
+[Documentation is on the wiki](https://github.com/ripplejs/ripple/wiki).
 
 ## Examples
 
@@ -42,6 +42,8 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
 * [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
 * [Iteration](http://jsfiddle.net/chrisbuttery/4j5ZD/1/light/)
+
+See more examples at [ripplejs/examples](https://github.com/ripplejs/examples)
 
 ## Plugins
 
@@ -56,3 +58,8 @@ It's all on Github for now. Read [getting started](https://github.com/ripplejs/r
 * [dispatch](https://github.com/ripplejs/dispatch) - Dispatch custom DOM events up the tree
 
 [View and add them on the wiki](https://github.com/ripplejs/ripple/wiki/Plugins)
+
+
+## License
+
+MIT

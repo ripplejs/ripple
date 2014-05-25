@@ -1,6 +1,6 @@
 module.exports = function(config) {
   config.set({
-    basePath: '',
+    basePath: '../',
     autoWatch: false,
     port: 9876,
     colors: true,
