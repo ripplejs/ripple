@@ -27,12 +27,6 @@ person.appendTo(document.body);
 component install ripplejs/ripple
 ```
 
-```js
-npm install ripplejs
-```
-
-or download the [standlone version](https://github.com/ripplejs/ripple/releases) and include it on your page.
-
 ## Browser Support
 
 Supports real browsers and IE9+.
