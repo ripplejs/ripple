@@ -43,6 +43,19 @@ describe('View', function(){
     assert(view.last === 'Flintstone', 'Last name should be Flintstone');
   });
 
+  it('should add required attributes', function (done) {
+    var View = ripple('<div></div>')
+      .attr('first', { required: true });
+    try {
+      new View();
+      done(false);
+    }
+    catch (e) {
+      assert(e);
+      done();
+    }
+  });
+
   it('should have different bindings for each view', function () {
     var i = 0;
     var One = ripple('<div foo="bar"></div>');
