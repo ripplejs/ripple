@@ -12,14 +12,14 @@ describe('model', function(){
       foo: 'bar'
     });
     assert( view.get('foo') === 'bar' );
-    assert( view.data.foo === 'bar' );
+    assert( view.attrs.foo === 'bar' );
   })
 
   it('should work with no properties', function(){
     view = new View();
     view.set('foo', 'bar');
     assert( view.get('foo') === 'bar' );
-    assert( view.data.foo === 'bar' );
+    assert( view.attrs.foo === 'bar' );
   })
 
   it('should set key and value', function(){
@@ -32,7 +32,7 @@ describe('model', function(){
     view = new View();
     view.set({ 'foo' : 'bar' });
     assert( view.get('foo') === 'bar' );
-    assert( view.data.foo === 'bar' );
+    assert( view.attrs.foo === 'bar' );
   });
 
   it('should set and object with a falsy 2nd param', function(){

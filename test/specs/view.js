@@ -22,7 +22,7 @@ describe('View', function(){
     var view = new View({
       foo: 'bar'
     });
-    assert(view.data.foo === 'bar');
+    assert(view.get('foo') === 'bar');
   })
 
   it('should set values', function () {
@@ -30,20 +30,17 @@ describe('View', function(){
       foo: 'bar'
     });
     view.set('foo', 'baz');
-    assert( view.data.foo === 'baz' );
+    assert( view.get('foo') === 'baz' );
   });
 
-  it.skip('should be able to set default properties', function () {
-    View.parse = function(options){
-      return {
-        first: 'Fred',
-        last: 'Flintstone'
-      };
-    };
+  it('should be able to set default properties', function () {
+    var View = ripple('<div></div>')
+      .attr('first', { default: 'Fred' })
+      .attr('last', { default: 'Flintstone' });
     var view = new View();
     view.set('first', 'Wilma');
-    assert(view.data.first === 'Wilma');
-    assert(view.data.last === 'Flintstone');
+    assert(view.first === 'Wilma', 'First name should be Wilma');
+    assert(view.last === 'Flintstone', 'Last name should be Flintstone');
   });
 
   it('should have different bindings for each view', function () {
