@@ -75,7 +75,7 @@ describe('View', function(){
     assert(view.el.outerHTML === '<ul></ul>');
   });
 
-  describe('creating child views', function () {
+  describe.skip('creating child views', function () {
 
     beforeEach(function () {
       View = ripple('<div></div>');

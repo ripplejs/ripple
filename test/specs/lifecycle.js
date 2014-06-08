@@ -13,27 +13,8 @@ describe('lifecycle events', function () {
     new View();
   });
 
-  it('should have a construct method', function (done) {
-    View.construct(function(options){
-      assert(options.foo === 'bar');
-      assert( this instanceof View );
-      done();
-    });
-    new View({
-      foo: 'bar'
-    });
-  });
-
   it('should fire a created event', function (done) {
     View.on('created', function(){
-      done();
-    });
-    new View();
-  });
-
-  it('should have a created method', function (done) {
-    View.created(function(){
-      assert( this instanceof View );
       done();
     });
     new View();
@@ -46,26 +27,8 @@ describe('lifecycle events', function () {
     new View();
   });
 
-  it('should have a ready method', function (done) {
-    View.ready(function(){
-      assert( this instanceof View );
-      done();
-    });
-    new View();
-  });
-
   it('should fire a mounted event', function (done) {
     View.on('mounted', function(){
-      done();
-    });
-    new View()
-      .appendTo(document.body)
-      .remove();
-  });
-
-  it('should have a mounted method', function (done) {
-    View.mounted(function(){
-      assert( this instanceof View );
       done();
     });
     new View()
@@ -82,31 +45,12 @@ describe('lifecycle events', function () {
       .remove();
   });
 
-  it('should have an unmounted method', function (done) {
-    View.unmounted(function(){
-      assert( this instanceof View );
-      done();
-    });
-    new View()
-      .appendTo(document.body)
-      .remove();
-  });
-
   it('should fire a destroy event', function (done) {
     View.on('destroyed', function(){
       done();
     });
     new View()
       .destroy()
-  });
-
-  it('should have an destroy method', function (done) {
-    View.destroyed(function(){
-      assert( this instanceof View );
-      done();
-    });
-    new View()
-      .destroy();
   });
 
 });
