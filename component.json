@@ -4,7 +4,6 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
-    "lib/view.js",
     "lib/bindings.js",
     "lib/render.js",
     "lib/directive.js",
