@@ -6,7 +6,6 @@
     "lib/index.js",
     "lib/view.js",
     "lib/bindings.js",
-    "lib/model.js",
     "lib/render.js",
     "lib/directive.js",
     "lib/text-binding.js",
