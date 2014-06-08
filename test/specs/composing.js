@@ -10,9 +10,7 @@ describe('composing views', function () {
     Parent = ripple('<child id="test" parentcolor="{{color}}"></child>');
     Parent.compose('child', Child);
     view = new Parent({
-      data: {
-        color: 'red'
-      }
+      color: 'red'
     });
     view.appendTo(document.body);
   });

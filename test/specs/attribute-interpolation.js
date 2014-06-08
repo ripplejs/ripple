@@ -7,10 +7,8 @@ describe('attribute interpolation', function () {
   beforeEach(function () {
     View = ripple('<div id="{{foo}}" hidden="{{hidden}}"></div>');
     view = new View({
-      data: {
-        foo: 'bar',
-        hidden: true
-      }
+      foo: 'bar',
+      hidden: true
     });
     el = view.el;
     view.appendTo(document.body);

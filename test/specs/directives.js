@@ -46,9 +46,7 @@ describe('directives', function () {
       }
     });
     var view = new View({
-      data: {
-        foo: 'bar'
-      }
+      foo: 'bar'
     });
   });
 

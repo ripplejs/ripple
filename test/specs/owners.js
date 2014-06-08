@@ -6,10 +6,10 @@ describe('owners', function () {
   beforeEach(function () {
     View = ripple('<div></div>');
     parent = new View();
-    child = new View({
+    child = new View(null, {
       owner: parent
     });
-    grandchild = new View({
+    grandchild = new View(null, {
       owner: child
     });
   });

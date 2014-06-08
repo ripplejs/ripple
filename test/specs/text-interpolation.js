@@ -7,9 +7,7 @@ describe('text interpolation', function () {
   beforeEach(function () {
     View = ripple('<div>{{text}}</div>');
     view = new View({
-      data: {
-        text: 'Ted'
-      }
+      text: 'Ted'
     });
     view.appendTo('body');
   });
