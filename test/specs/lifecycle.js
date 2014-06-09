@@ -46,7 +46,7 @@ describe('lifecycle events', function () {
   });
 
   it('should fire a destroy event', function (done) {
-    View.on('destroyed', function(){
+    View.on('destroying', function(){
       done();
     });
     new View()
