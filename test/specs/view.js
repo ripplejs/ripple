@@ -130,30 +130,4 @@ describe('View', function(){
     assert(view.el.outerHTML === '<ul></ul>');
   });
 
-  describe.skip('creating child views', function () {
-
-    beforeEach(function () {
-      View = ripple('<div></div>');
-    });
-
-    it('should create child views with the same bindings', function (done) {
-      View.directive('foo', function(val){
-        assert(val === 'bar');
-        done();
-      });
-      var Child = View.create('<div foo="bar"></div>');
-      new Child();
-    });
-
-    it('should not have the same lifecycle events', function (done) {
-      View.created(function(val){
-        done(false);
-      });
-      var Child = View.create('<div foo="bar"></div>');
-      new Child();
-      done();
-    });
-
-  });
-
 })
