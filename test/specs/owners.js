@@ -17,8 +17,8 @@ describe('owners', function () {
   });
 
   it('should be able to have an owner', function () {
-    assert(child.owner === parent);
-    assert(grandchild.owner == child);
+    assert(child.owner() === parent);
+    assert(grandchild.owner() == child);
   });
 
   it('should set the root', function () {

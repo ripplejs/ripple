@@ -4,6 +4,8 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
+    "lib/proto.js",
+    "lib/static.js",
     "lib/bindings/index.js",
     "lib/bindings/directive.js",
     "lib/bindings/text.js",
@@ -19,7 +21,6 @@
     "component/each": "*",
     "component/emitter": "*",
     "component/type": "*",
-    "apily/guid": "*",
     "ripplejs/interpolate": "0.4.3",
     "ripplejs/path-observer": "0.2.0",
     "yields/uniq": "*"
