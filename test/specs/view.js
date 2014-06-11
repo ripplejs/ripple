@@ -9,6 +9,13 @@ describe('View', function(){
     assert(view);
   });
 
+  it('should have a unique id', function () {
+    var view = new View();
+    var view2 = new View();
+    assert(view.id);
+    assert(view.id !== view2.id);
+  });
+
   it('should create a view with a selector', function () {
     var test = document.createElement('div');
     test.id = 'foo';
@@ -54,6 +61,48 @@ describe('View', function(){
       assert(e);
       done();
     }
+  });
+
+  it('should add required attributes with defaults', function (done) {
+    var View = ripple('<div></div>')
+      .attr('first', { required: true, default: 'foo' });
+    var view = new View();
+    assert(view.first === 'foo');
+    done();
+  });
+
+  it('should have typed attributes', function (done) {
+    var View = ripple('<div></div>')
+      .attr('first', { type: 'string' });
+    try {
+      new View({ 'first': 10 });
+      done(false);
+    }
+    catch (e) {
+      assert(e);
+      done();
+    }
+  });
+
+  it('should have typed required attributes', function (done) {
+    var View = ripple('<div></div>')
+      .attr('first', { required: true, type: 'string' });
+    try {
+      new View();
+      done(false);
+    }
+    catch (e) {
+      assert(e);
+      done();
+    }
+  });
+
+  it('should have typed attributes with defaults', function (done) {
+    var View = ripple('<div></div>')
+      .attr('first', { default: 'foo', type: 'string' });
+    var view = new View();
+    assert(view.first === 'foo');
+    done();
   });
 
   it('should have different bindings for each view', function () {
