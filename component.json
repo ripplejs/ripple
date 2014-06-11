@@ -4,11 +4,11 @@
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
-    "lib/render.js",
-    "lib/directive.js",
-    "lib/text-binding.js",
-    "lib/attr-binding.js",
-    "lib/child-binding.js"
+    "lib/bindings/index.js",
+    "lib/bindings/directive.js",
+    "lib/bindings/text.js",
+    "lib/bindings/attribute.js",
+    "lib/bindings/child.js"
   ],
   "dependencies": {
     "anthonyshort/attributes": "*",
