@@ -8,7 +8,7 @@ makes composition of views really easy.
 
 ```js
 var Person = ripple('<div>{{name}}</div>')
-  .attr('name');
+  .attr('name', { required: true, type: 'string' });
 
 var person = new Person({
   name: 'Tom'
