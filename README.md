@@ -8,17 +8,14 @@ makes composition of views really easy.
 
 ```js
 var Person = ripple('<div>{{name}}</div>')
-  .use(events)
-  .use(each)
-  .use(dispatch);
+  .attr('name');
 
 var person = new Person({
-  data: {
-    name: 'Tom'
-  }
+  name: 'Tom'
 });
 
 person.appendTo(document.body);
+person.name = "Barry"; // DOM updates automatically
 ```
 
 ## Install

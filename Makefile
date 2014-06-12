@@ -8,6 +8,9 @@ MINIFY = ./node_modules/.bin/minify
 build: components $(find lib/*.js)
 	@${COMPONENT} build --dev
 
+prod:
+	@${COMPONENT} build
+
 components: node_modules component.json
 	@${COMPONENT} install --dev
 
@@ -42,4 +45,4 @@ release: test
 	git changelog --tag $$VERSION && \
 	git release $$VERSION
 
-.PHONY: clean test karma patch release
+.PHONY: clean test karma patch release prod
