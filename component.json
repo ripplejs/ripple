@@ -21,6 +21,7 @@
     "component/domify": "*",
     "component/each": "*",
     "component/emitter": "*",
+    "component/clone": "*",
     "ripplejs/interpolate": "0.4.3",
     "ripplejs/path-observer": "0.2.0",
     "yields/uniq": "*"

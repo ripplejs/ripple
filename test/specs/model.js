@@ -82,5 +82,22 @@ describe('model', function(){
     assert( view.get('razz.tazz.jazz') === undefined );
   })
 
+  it('shouldn\'t redefine basic object', function(){
+    var another_view
+    var foo = {
+      bar: 1
+    };
+    another_view = new View({
+      data: foo
+    });
+    view = new View({
+      data: foo
+    });
+    another_view.set('bar', 3);
+    view.set('bar', 2);
+    assert( another_view.get('bar') === 3 );
+    assert( foo.bar !== 2 );
+    assert( foo.bar === 1 );
+  })
 
 });
