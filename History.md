@@ -1,3 +1,21 @@
+0.5.0 / 2014-06-14
+==================
+
+* removed the `scope` option. This cleaned up a lot of code, but it means the each plugin won't work in it's current state. Instead, we'll prefer to pass in views instead of just building sub-views from templates. It makes the library smaller and the code more maintainable.
+* Removed the need to use `.parse`. 
+* Views now have the signature `new View(attrs, options)` instead of using the `data` property.
+* New `View.attr` method for defining attributes. This lets us create getters/setters and means plugins can do cool things with the attributes (like making them required, setting defaults or enforcing a type).
+* Once attributes are defined using `attr` you can access them like `view.name = 'foo'` instead of doing `view.set('name', 'foo')`. Although the get and set methods still exist.
+* Removed a bunch of the files and make it simpler. Specifically removed the `model`.
+* Views now have a unique ID
+* Consistent code formatting
+* Owner can only be set once and can't be changed. If this restriction doesn't work in practice we can revisit.
+* Text bindings will render objects that have a .el property. This means you can set other views as attributes on a view and it will render it.
+* Removed `create` and the ability to create child views. This was only used for the each plugin. Instead, create views and add their plugins manually. Less magic.
+* Interpolator can't be accessed now, meaning you can't change delimiters. This is an edge case and probably doesn't need to be used, it now means we don't need a different interpolator for every view created.
+* Bumped component to v1.
+* Directives now remove the attributes from the template before rendering
+
 0.4.0 / 2014-04-29
 ==================
 
