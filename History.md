@@ -1,3 +1,9 @@
+
+0.5.1 / 2014-06-15
+==================
+
+* Fixed issue with text bindings not rendering elements if there was whitespace around it
+
 0.5.0 / 2014-06-14
 ==================
 
