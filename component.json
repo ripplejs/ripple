@@ -1,6 +1,6 @@
 {
   "name": "ripple",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "main": "lib/index.js",
   "scripts": [
     "lib/index.js",
@@ -21,7 +21,7 @@
     "component/each": "*",
     "component/emitter": "*",
     "component/type": "*",
-    "ripplejs/interpolate": "0.4.3",
+    "ripplejs/interpolate": "0.4.4",
     "ripplejs/path-observer": "0.2.0",
     "yields/uniq": "*"
   },
