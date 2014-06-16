@@ -16,6 +16,14 @@ describe('View', function(){
     assert(view.id !== view2.id);
   });
 
+  it('should call an initialize method if it exists', function (done) {
+    View = ripple('<div></div>');
+    View.prototype.initialize = function() {
+      done();
+    };
+    new View();
+  });
+
   it('should create a view with a selector', function () {
     var test = document.createElement('div');
     test.id = 'foo';

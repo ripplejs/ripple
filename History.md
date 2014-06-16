@@ -1,4 +1,9 @@
 
+0.5.2 / 2014-06-16
+==================
+
+ * Added `initialize`. If this method exists, it will be called after the `created` event.
+
 0.5.1 / 2014-06-15
 ==================
 
