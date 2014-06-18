@@ -44,6 +44,7 @@ See more examples at [ripplejs/examples](https://github.com/ripplejs/examples)
 
 ## Plugins
 
+* [shortcuts](https://github.com/ripplejs/shortcuts) - add custom key binding combos
 * [events](https://github.com/ripplejs/events) - add event listeners to the DOM and call methods on the view
 * [each](https://github.com/ripplejs/each) - Basic iteration using the `each` directive.
 * [bind-methods](https://github.com/ripplejs/bind-methods) - Bind all methods on the prototype to the view
