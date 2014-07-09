@@ -1,4 +1,10 @@
 
+0.5.3 / 2014-07-09
+==================
+
+* Optionally use `new` when creating views
+* Fixed issue with expressions failing and not returning null
+
 0.5.2 / 2014-06-16
 ==================
 
