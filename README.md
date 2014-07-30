@@ -37,7 +37,7 @@ Supports real browsers and IE9+.
 * [Clock](http://jsfiddle.net/chrisbuttery/QnHPj/3/)
 * [Counter](http://jsfiddle.net/anthonyshort/ybq9Q/light/)
 * [Like Button](http://jsfiddle.net/anthonyshort/ZA2gQ/6/light/)
-* [Markdown Editor](http://jsfiddle.net/anthonyshort/QGK3r/light/)
+* [Markdown Editor](http://jsfiddle.net/QGK3r/40/)
 * [Iteration](http://jsfiddle.net/chrisbuttery/4j5ZD/1/light/)
 
 See more examples at [ripplejs/examples](https://github.com/ripplejs/examples)
