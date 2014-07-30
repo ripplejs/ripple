@@ -1,6 +1,7 @@
 {
   "name": "ripplejs",
-  "version": "0.5.0",
+  "version": "0.5.3",
+  "main": "dist/ripple.js",
   "description": "Minimal reactive views for building user interfaces",
   "devDependencies": {
     "karma": "~0.12.1",

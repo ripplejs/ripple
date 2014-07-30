@@ -32,6 +32,12 @@ lint: node_modules
 test: lint build
 	${MOCHA} /test/runner.html
 
+standalone:
+	@${COMPONENT} build --standalone ripple
+	@-rm -r dist
+	@-mkdir dist
+	@bfc build/build.js > dist/ripple.js
+
 ci: test
 
 patch:
