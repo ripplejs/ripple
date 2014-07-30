@@ -16,6 +16,7 @@
     "jshint": "~2.4.4",
     "component": "1.*",
     "bump": "git://github.com/ianstormtaylor/bump",
-    "minify": "~0.2.6"
+    "minify": "~0.2.6",
+    "bfc": "*"
   }
 }

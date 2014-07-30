@@ -4,6 +4,7 @@ JSHINT = ./node_modules/.bin/jshint
 MOCHA = ./node_modules/.bin/mocha-phantomjs
 BUMP = ./node_modules/.bin/bump
 MINIFY = ./node_modules/.bin/minify
+BFC = ./node_modules/.bin/bfc
 
 build: components $(find lib/*.js)
 	@${COMPONENT} build --dev
@@ -36,7 +37,7 @@ standalone:
 	@${COMPONENT} build --standalone ripple
 	@-rm -r dist
 	@-mkdir dist
-	@bfc build/build.js > dist/ripple.js
+	@${BFC} build/build.js > dist/ripple.js
 
 ci: test
 
